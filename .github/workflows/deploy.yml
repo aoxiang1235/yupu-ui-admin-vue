@@ -1,35 +1,28 @@
 name: 部署到腾讯云服务器
-
 on:
   # 允许手动触发部署
   workflow_dispatch:
-
 # 设置权限
 permissions:
   contents: read
-
 jobs:
   deploy:
     name: 构建并部署到服务器
     runs-on: ubuntu-latest
-
     steps:
       # 1. 检出代码
       - name: 📦 检出代码
         uses: actions/checkout@v4
-
       # 2. 设置 Node.js
       - name: 🔧 设置 Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
       # 3. 安装 pnpm
       - name: 📥 安装 pnpm
         uses: pnpm/action-setup@v3
         with:
           version: 9
-
       # 4. 获取 pnpm store 目录
       - name: 🗂️ 获取 pnpm store 目录
         shell: bash
