@@ -14,20 +14,16 @@ jobs:
     name: 代码检查与构建
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [18, 20]
-
     steps:
       # 1. 检出代码
       - name: 检出代码
         uses: actions/checkout@v4
 
       # 2. 设置 Node.js
-      - name: 设置 Node.js ${{ matrix.node-version }}
+      - name: 设置 Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20
 
       # 3. 安装 pnpm
       - name: 安装 pnpm
@@ -56,7 +52,7 @@ jobs:
 
       # 7. TypeScript 类型检查
       - name: TypeScript 类型检查
-        run: pnpm run ts:check
+        run: NODE_OPTIONS="--max-old-space-size=6144" pnpm run ts:check
 
       # 8. ESLint 检查
       - name: ESLint 代码检查
@@ -72,11 +68,10 @@ jobs:
 
       # 11. 构建项目
       - name: 构建生产版本
-        run: pnpm run build:prod
+        run: NODE_OPTIONS="--max-old-space-size=6144" pnpm run build:prod
 
-      # 12. 上传构建产物（仅在 Node 20 上执行）
+      # 12. 上传构建产物
       - name: 上传构建产物
-        if: matrix.node-version == 20
         uses: actions/upload-artifact@v4
         with:
           name: dist
