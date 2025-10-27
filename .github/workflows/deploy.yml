@@ -51,7 +51,7 @@ jobs:
 
       # 7. 构建生产版本
       - name: 🏗️ 构建生产版本
-        run: pnpm run build:prod
+        run: NODE_OPTIONS="--max-old-space-size=6144" pnpm run build:prod
 
       # 8. 打包构建产物
       - name: 📦 打包构建产物
