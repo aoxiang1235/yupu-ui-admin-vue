@@ -46,14 +46,26 @@ jobs:
       - name: 🏗️ 构建生产版本
         run: NODE_OPTIONS="--max-old-space-size=6144" pnpm run build:prod
 
-      # 8. 打包构建产物
+      # 8. 验证构建产物
+      - name: ✅ 验证构建产物
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "❌ 错误：dist 目录不存在，构建可能失败了"
+            exit 1
+          fi
+          echo "✅ dist 目录存在"
+          ls -la dist/
+      
+      # 9. 打包构建产物
       - name: 📦 打包构建产物
         run: |
           cd dist
           tar -czf ../dist.tar.gz .
           cd ..
+          echo "✅ 打包完成: dist.tar.gz"
+          ls -lh dist.tar.gz
 
-      # 9. 部署到服务器
+      # 10. 部署到服务器
       - name: 🚀 部署到腾讯云服务器
         uses: appleboy/scp-action@master
         with:
@@ -64,7 +76,7 @@ jobs:
           source: 'dist.tar.gz'
           target: '/tmp/'
 
-      # 10. 解压并替换文件
+      # 11. 解压并替换文件
       - name: 🔄 解压并更新网站文件
         uses: appleboy/ssh-action@master
         with:
@@ -95,7 +107,7 @@ jobs:
 
             echo "✅ 部署完成！"
 
-      # 11. 部署成功通知
+      # 12. 部署成功通知
       - name: ✅ 部署成功
         run: |
           echo "🎉 部署成功！"
