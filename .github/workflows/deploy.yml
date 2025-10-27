@@ -1,10 +1,6 @@
 name: 部署到腾讯云服务器
 
 on:
-  # 只在 master 分支 push 时自动部署
-  push:
-    branches:
-      - master
   # 允许手动触发部署
   workflow_dispatch:
 
@@ -16,30 +12,30 @@ jobs:
   deploy:
     name: 构建并部署到服务器
     runs-on: ubuntu-latest
-    
+
     steps:
       # 1. 检出代码
       - name: 📦 检出代码
         uses: actions/checkout@v4
-      
+
       # 2. 设置 Node.js
       - name: 🔧 设置 Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      
+
       # 3. 安装 pnpm
       - name: 📥 安装 pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 8
-      
+          version: 9
+
       # 4. 获取 pnpm store 目录
       - name: 🗂️ 获取 pnpm store 目录
         shell: bash
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-      
+
       # 5. 缓存依赖
       - name: 💾 缓存 pnpm 依赖
         uses: actions/cache@v4
@@ -48,22 +44,22 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-      
+
       # 6. 安装依赖
       - name: 📦 安装项目依赖
         run: pnpm install --frozen-lockfile
-      
+
       # 7. 构建生产版本
       - name: 🏗️ 构建生产版本
         run: pnpm run build:prod
-      
+
       # 8. 打包构建产物
       - name: 📦 打包构建产物
         run: |
           cd dist
           tar -czf ../dist.tar.gz .
           cd ..
-      
+
       # 9. 部署到服务器
       - name: 🚀 部署到腾讯云服务器
         uses: appleboy/scp-action@master
@@ -72,9 +68,9 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
-          source: "dist.tar.gz"
-          target: "/tmp/"
-      
+          source: 'dist.tar.gz'
+          target: '/tmp/'
+
       # 10. 解压并替换文件
       - name: 🔄 解压并更新网站文件
         uses: appleboy/ssh-action@master
@@ -89,26 +85,25 @@ jobs:
               echo "📦 备份当前版本..."
               tar -czf /tmp/backup-$(date +%Y%m%d-%H%M%S).tar.gz -C ${{ secrets.SERVER_TARGET }} .
             fi
-            
+
             # 创建目标目录（如果不存在）
             mkdir -p ${{ secrets.SERVER_TARGET }}
-            
+
             # 清空目标目录
             echo "🗑️ 清空旧文件..."
             rm -rf ${{ secrets.SERVER_TARGET }}/*
-            
+
             # 解压新文件
             echo "📂 解压新版本..."
             tar -xzf /tmp/dist.tar.gz -C ${{ secrets.SERVER_TARGET }}
-            
+
             # 清理临时文件
             rm -f /tmp/dist.tar.gz
-            
+
             echo "✅ 部署完成！"
-      
+
       # 11. 部署成功通知
       - name: ✅ 部署成功
         run: |
           echo "🎉 部署成功！"
           echo "访问地址: http://${{ secrets.SERVER_HOST }}"
-

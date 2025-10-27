@@ -23,34 +23,34 @@ jobs:
   lint-and-build:
     name: 代码检查与构建
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
         node-version: [18, 20]
-    
+
     steps:
       # 1. 检出代码
       - name: 检出代码
         uses: actions/checkout@v4
-      
+
       # 2. 设置 Node.js
       - name: 设置 Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      
+
       # 3. 安装 pnpm
       - name: 安装 pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 8
-      
+          version: 9
+
       # 4. 获取 pnpm store 目录
       - name: 获取 pnpm store 目录
         shell: bash
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-      
+
       # 5. 缓存依赖
       - name: 缓存 pnpm 依赖
         uses: actions/cache@v4
@@ -59,31 +59,31 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-      
+
       # 6. 安装依赖
       - name: 安装项目依赖
         run: pnpm install --frozen-lockfile
-      
+
       # 7. TypeScript 类型检查
       - name: TypeScript 类型检查
         run: pnpm run ts:check
-      
+
       # 8. ESLint 检查
       - name: ESLint 代码检查
         run: pnpm run lint:eslint
-      
+
       # 9. Prettier 格式检查
       - name: Prettier 格式检查
         run: pnpm run lint:format --check
-      
+
       # 10. Stylelint 样式检查
       - name: Stylelint 样式检查
         run: pnpm run lint:style
-      
+
       # 11. 构建项目
       - name: 构建生产版本
         run: pnpm run build:prod
-      
+
       # 12. 上传构建产物（仅在 Node 20 上执行）
       - name: 上传构建产物
         if: matrix.node-version == 20
@@ -92,7 +92,7 @@ jobs:
           name: dist
           path: dist/
           retention-days: 7
-  
+
   # 构建结果汇总
   ci-success:
     name: CI 检查通过
@@ -101,4 +101,3 @@ jobs:
     steps:
       - name: ✅ 所有检查已通过
         run: echo "CI 检查全部通过！"
-
