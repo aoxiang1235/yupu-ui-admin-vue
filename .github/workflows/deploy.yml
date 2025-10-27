@@ -47,7 +47,7 @@ jobs:
 
       # 6. 安装依赖
       - name: 📦 安装项目依赖
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       # 7. 构建生产版本
       - name: 🏗️ 构建生产版本
