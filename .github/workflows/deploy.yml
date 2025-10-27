@@ -49,17 +49,17 @@ jobs:
       # 8. 验证构建产物
       - name: ✅ 验证构建产物
         run: |
-          if [ ! -d "dist" ]; then
-            echo "❌ 错误：dist 目录不存在，构建可能失败了"
+          if [ ! -d "dist-prod" ]; then
+            echo "❌ 错误：dist-prod 目录不存在，构建可能失败了"
             exit 1
           fi
-          echo "✅ dist 目录存在"
-          ls -la dist/
+          echo "✅ dist-prod 目录存在"
+          ls -la dist-prod/
       
       # 9. 打包构建产物
       - name: 📦 打包构建产物
         run: |
-          cd dist
+          cd dist-prod
           tar -czf ../dist.tar.gz .
           cd ..
           echo "✅ 打包完成: dist.tar.gz"
