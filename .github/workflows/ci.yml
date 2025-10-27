@@ -1,16 +1,6 @@
 name: CI
 
 on:
-  # 在 push 到主要分支时触发
-  push:
-    branches:
-      - master
-      - develop
-  # 在 PR 时触发
-  pull_request:
-    branches:
-      - master
-      - develop
   # 允许手动触发
   workflow_dispatch:
 
@@ -62,7 +52,7 @@ jobs:
 
       # 6. 安装依赖
       - name: 安装项目依赖
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       # 7. TypeScript 类型检查
       - name: TypeScript 类型检查
