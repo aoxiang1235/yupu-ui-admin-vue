@@ -171,7 +171,7 @@ const canvasClick = (e) => {
         token: backToken.value
       }
       reqCheck(data).then((res) => {
-        if (res.repCode == '0000') {
+        if (res && res.repCode == '0000') {
           barAreaColor.value = '#4cae4c'
           barAreaBorderColor.value = '#5cb85c'
           text.value = t('captcha.success')
@@ -187,11 +187,20 @@ const canvasClick = (e) => {
           proxy.$parent.$emit('error', proxy)
           barAreaColor.value = '#d9534f'
           barAreaBorderColor.value = '#d9534f'
-          text.value = t('captcha.fail')
+          text.value = res ? t('captcha.fail') : '验证失败，请重试'
           setTimeout(() => {
             refresh()
           }, 700)
         }
+      }).catch((error) => {
+        console.error('验证请求失败:', error)
+        proxy.$parent.$emit('error', proxy)
+        barAreaColor.value = '#d9534f'
+        barAreaBorderColor.value = '#d9534f'
+        text.value = '验证失败，请重试'
+        setTimeout(() => {
+          refresh()
+        }, 700)
       })
     }, 400)
   }
@@ -227,15 +236,22 @@ const getPictrue = async () => {
   let data = {
     captchaType: captchaType.value
   }
-  const res = await getCode(data)
-  if (res.repCode == '0000') {
-    pointBackImgBase.value = res.repData.originalImageBase64
-    backToken.value = res.repData.token
-    secretKey.value = res.repData.secretKey
-    poinTextList.value = res.repData.wordList
-    text.value = t('captcha.point') + '【' + poinTextList.value.join(',') + '】'
-  } else {
-    text.value = res.repMsg
+  try {
+    const res = await getCode(data)
+    if (res && res.repCode == '0000') {
+      pointBackImgBase.value = res.repData.originalImageBase64
+      backToken.value = res.repData.token
+      secretKey.value = res.repData.secretKey
+      poinTextList.value = res.repData.wordList
+      text.value = t('captcha.point') + '【' + poinTextList.value.join(',') + '】'
+    } else if (res) {
+      text.value = res.repMsg
+    } else {
+      text.value = '获取验证码失败'
+    }
+  } catch (error) {
+    console.error('获取验证码失败:', error)
+    text.value = '获取验证码失败，请刷新重试'
   }
 }
 //坐标转换函数

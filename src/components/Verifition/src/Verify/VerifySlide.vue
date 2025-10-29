@@ -287,7 +287,7 @@ const end = () => {
       token: backToken.value
     }
     reqCheck(data).then((res) => {
-      if (res.repCode == '0000') {
+      if (res && res.repCode == '0000') {
         moveBlockBackgroundColor.value = '#5cb85c'
         leftBarBorderColor.value = '#5cb85c'
         iconColor.value = '#fff'
@@ -324,11 +324,26 @@ const end = () => {
           refresh()
         }, 1000)
         proxy.$parent.$emit('error', proxy)
-        tipWords.value = t('captcha.fail')
+        tipWords.value = res ? t('captcha.fail') : '验证失败，请重试'
         setTimeout(() => {
           tipWords.value = ''
         }, 1000)
       }
+    }).catch((error) => {
+      console.error('验证请求失败:', error)
+      moveBlockBackgroundColor.value = '#d9534f'
+      leftBarBorderColor.value = '#d9534f'
+      iconColor.value = '#fff'
+      iconClass.value = 'icon-close'
+      passFlag.value = false
+      setTimeout(function () {
+        refresh()
+      }, 1000)
+      proxy.$parent.$emit('error', proxy)
+      tipWords.value = '验证失败，请重试'
+      setTimeout(() => {
+        tipWords.value = ''
+      }, 1000)
     })
     status.value = false
   }
@@ -363,14 +378,21 @@ const getPictrue = async () => {
   let data = {
     captchaType: captchaType.value
   }
-  const res = await getCode(data)
-  if (res.repCode == '0000') {
-    backImgBase.value = res.repData.originalImageBase64
-    blockBackImgBase.value = res.repData.jigsawImageBase64
-    backToken.value = res.repData.token
-    secretKey.value = res.repData.secretKey
-  } else {
-    tipWords.value = res.repMsg
+  try {
+    const res = await getCode(data)
+    if (res && res.repCode == '0000') {
+      backImgBase.value = res.repData.originalImageBase64
+      blockBackImgBase.value = res.repData.jigsawImageBase64
+      backToken.value = res.repData.token
+      secretKey.value = res.repData.secretKey
+    } else if (res) {
+      tipWords.value = res.repMsg
+    } else {
+      tipWords.value = '获取验证码失败'
+    }
+  } catch (error) {
+    console.error('获取验证码失败:', error)
+    tipWords.value = '获取验证码失败，请刷新重试'
   }
 }
 </script>
