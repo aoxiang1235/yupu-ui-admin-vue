@@ -42,5 +42,5 @@ export const createFile = (data: any) => {
 
 // 上传文件
 export const updateFile = (data: any) => {
-  return request.upload({ url: '/infra/file/upload', data })
+  return request.upload({ url: '/infra/file/upload-with-path', data })
 }
