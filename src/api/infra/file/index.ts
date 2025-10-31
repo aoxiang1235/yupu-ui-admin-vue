@@ -51,5 +51,5 @@ export const updateFile = (data: any) => {
 
 // 获取文件访问签名 URL
 export const getFileAccessUrl = (path: string) => {
-  return request.get({ url: '/infra/file/get-access-url', params: { path } })
+  return request.get({ url: '/infra/file/signed-url', params: { path } })
 }
