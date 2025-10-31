@@ -42,7 +42,11 @@ export const createFile = (data: any) => {
 
 // 上传文件
 export const updateFile = (data: any) => {
-  return request.upload({ url: '/infra/file/upload-with-path', data })
+  return request.upload({ 
+    url: '/infra/file/upload-with-path', 
+    data,
+    timeout: 120000  // 文件上传超时时间：2分钟
+  })
 }
 
 // 获取文件访问签名 URL
