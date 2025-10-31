@@ -48,16 +48,41 @@ import { createImageViewer } from '@/components/ImageViewer'
 
 import { propTypes } from '@/utils/propTypes'
 import { useUpload } from '@/components/UploadFile/src/useUpload'
+import * as FileApi from '@/api/infra/file'
 
 defineOptions({ name: 'UploadImgs' })
 
 const message = useMessage() // 消息弹窗
 // 查看图片
-const imagePreview = (imgUrl: string) => {
-  createImageViewer({
-    zIndex: 9999999,
-    urlList: [imgUrl]
-  })
+const imagePreview = async (imgUrl: string) => {
+  try {
+    let previewUrl = imgUrl
+    
+    // 只有需要签名时才获取签名 URL
+    if (props.needSignature) {
+      // 从 URL 中提取路径
+      let path = imgUrl
+      try {
+        const urlObj = new URL(imgUrl)
+        path = urlObj.pathname
+      } catch (e) {
+        // 如果不是完整 URL，直接使用原始值作为路径
+        path = imgUrl
+      }
+      
+      // 获取带签名的访问 URL
+      const res = await FileApi.getFileAccessUrl(path)
+      previewUrl = res.data || imgUrl
+    }
+    
+    createImageViewer({
+      zIndex: 9999999,
+      urlList: [previewUrl]
+    })
+  } catch (error) {
+    console.error('获取图片访问链接失败:', error)
+    message.error('获取图片访问链接失败')
+  }
 }
 
 type FileTypes =
@@ -82,7 +107,8 @@ const props = defineProps({
   height: propTypes.string.def('150px'), // 组件高度 ==> 非必传（默认为 150px）
   width: propTypes.string.def('150px'), // 组件宽度 ==> 非必传（默认为 150px）
   borderradius: propTypes.string.def('8px'), // 组件边框圆角 ==> 非必传（默认为 8px）
-  directory: propTypes.string.def(undefined) // 上传目录 ==> 非必传（默认为 undefined）
+  directory: propTypes.string.def(undefined), // 上传目录 ==> 非必传（默认为 undefined）
+  needSignature: propTypes.bool.def(true) // 预览时是否需要获取签名 URL ==> 非必传（默认为 true）
 })
 
 const { uploadUrl, httpRequest } = useUpload(props.directory)

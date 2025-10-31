@@ -44,3 +44,8 @@ export const createFile = (data: any) => {
 export const updateFile = (data: any) => {
   return request.upload({ url: '/infra/file/upload-with-path', data })
 }
+
+// 获取文件访问签名 URL
+export const getFileAccessUrl = (path: string) => {
+  return request.get({ url: '/infra/file/get-access-url', params: { path } })
+}
