@@ -22,6 +22,11 @@ export const deleteFile = (id: number) => {
   return request.delete({ url: '/infra/file/delete?id=' + id })
 }
 
+// 根据路径删除文件
+export const deleteFileByPath = (path: string) => {
+  return request.delete({ url: '/infra/file/delete-cos-batch', params: { path } })
+}
+
 // 批量删除文件
 export const deleteFileList = (ids: number[]) => {
   return request.delete({ url: '/infra/file/delete-list', params: { ids: ids.join(',') } })

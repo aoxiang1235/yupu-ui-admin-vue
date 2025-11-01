@@ -82,7 +82,8 @@ const props = defineProps({
   showDelete: propTypes.bool.def(true), // 是否显示删除按钮
   showBtnText: propTypes.bool.def(true), // 是否显示按钮文字
   directory: propTypes.string.def(undefined), // 上传目录 ==> 非必传（默认为 undefined）
-  needSignature: propTypes.bool.def(true) // 预览时是否需要获取签名 URL ==> 非必传（默认为 true）
+  needSignature: propTypes.bool.def(true), // 预览时是否需要获取签名 URL ==> 非必传（默认为 true）
+  autoDelete: propTypes.bool.def(true) // 删除时是否自动调用后端删除文件 ==> 非必传（默认为 true）
 })
 const { t } = useI18n() // 国际化
 const message = useMessage() // 消息弹窗
@@ -128,7 +129,33 @@ const imagePreview = async (imgUrl: string) => {
 
 const emit = defineEmits(['update:modelValue'])
 
-const deleteImg = () => {
+const deleteImg = async () => {
+  // 如果开启了自动删除，并且有图片URL
+  if (props.autoDelete && props.modelValue) {
+    try {
+      // 从 URL 中提取路径
+      let path = props.modelValue
+      try {
+        const urlObj = new URL(props.modelValue)
+        path = urlObj.pathname
+        // 去除查询参数（如签名参数）
+        path = path.split('?')[0]
+      } catch (e) {
+        // 如果不是完整 URL，直接使用原始值作为路径
+        path = props.modelValue.split('?')[0]
+      }
+      
+      // 调用后端删除文件
+      await FileApi.deleteFileByPath(path)
+      message.success('文件删除成功')
+    } catch (error) {
+      console.error('删除文件失败:', error)
+      message.error('删除文件失败')
+      // 即使删除失败，也清空图片URL（因为可能是文件已经不存在）
+    }
+  }
+  
+  // 清空图片URL
   emit('update:modelValue', '')
 }
 

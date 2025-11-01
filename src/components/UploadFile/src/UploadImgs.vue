@@ -114,7 +114,8 @@ const props = defineProps({
   width: propTypes.string.def('150px'), // 组件宽度 ==> 非必传（默认为 150px）
   borderradius: propTypes.string.def('8px'), // 组件边框圆角 ==> 非必传（默认为 8px）
   directory: propTypes.string.def(undefined), // 上传目录 ==> 非必传（默认为 undefined）
-  needSignature: propTypes.bool.def(true) // 预览时是否需要获取签名 URL ==> 非必传（默认为 true）
+  needSignature: propTypes.bool.def(true), // 预览时是否需要获取签名 URL ==> 非必传（默认为 true）
+  autoDelete: propTypes.bool.def(true) // 删除时是否自动调用后端删除文件 ==> 非必传（默认为 true）
 })
 
 const { uploadUrl, httpRequest } = useUpload(props.directory)
@@ -187,7 +188,33 @@ const emitUpdateModelValue = () => {
   emit('update:modelValue', result)
 }
 // 删除图片
-const handleRemove = (uploadFile: UploadFile) => {
+const handleRemove = async (uploadFile: UploadFile) => {
+  // 如果开启了自动删除，并且有文件URL
+  if (props.autoDelete && uploadFile.url) {
+    try {
+      // 从 URL 中提取路径
+      let path = uploadFile.url
+      try {
+        const urlObj = new URL(uploadFile.url)
+        path = urlObj.pathname
+        // 去除查询参数（如签名参数）
+        path = path.split('?')[0]
+      } catch (e) {
+        // 如果不是完整 URL，直接使用原始值作为路径
+        path = uploadFile.url.split('?')[0]
+      }
+      
+      // 调用后端删除文件
+      await FileApi.deleteFileByPath(path)
+      message.success('文件删除成功')
+    } catch (error) {
+      console.error('删除文件失败:', error)
+      message.error('删除文件失败')
+      // 即使删除失败，也继续从列表中移除（因为可能是文件已经不存在）
+    }
+  }
+  
+  // 从文件列表中移除
   fileList.value = fileList.value.filter(
     (item) => item.url !== uploadFile.url || item.name !== uploadFile.name
   )
