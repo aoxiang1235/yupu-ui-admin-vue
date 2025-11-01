@@ -144,14 +144,47 @@ interface UploadEmits {
 }
 
 const emit = defineEmits<UploadEmits>()
-const uploadSuccess: UploadProps['onSuccess'] = (res: any): void => {
+const uploadSuccess: UploadProps['onSuccess'] = async (res: any): Promise<void> => {
   message.success('上传成功')
   // 删除自身
   const index = fileList.value.findIndex((item) => item.response?.data === res.data)
   fileList.value.splice(index, 1)
-  uploadList.value.push({ name: res.data, url: res.data })
+  
+  // 新上传的文件URL
+  const newUrl = res.data
+  uploadList.value.push({ name: newUrl, url: newUrl })
+  
   if (uploadList.value.length == uploadNumber.value) {
-    fileList.value.push(...uploadList.value)
+    // 所有文件上传完成，批量处理
+    const newUrls = uploadList.value.map(item => item.url)
+    
+    // 为每个新URL获取签名（如果需要）
+    for (const originalUrl of newUrls) {
+      originalUrls.value.push(originalUrl) // 保存原始URL
+      
+      let displayUrl = originalUrl
+      
+      // 如果需要签名
+      if (props.needSignature && originalUrl) {
+        const hasSignature = /[?&](X-Amz-Signature|sign|signature|x-cos-security-token)=/i.test(originalUrl)
+        
+        if (!hasSignature) {
+          try {
+            const signedUrl = await FileApi.getFileAccessUrl(originalUrl)
+            displayUrl = signedUrl || originalUrl
+          } catch (error) {
+            console.error('获取签名URL失败:', error)
+            displayUrl = originalUrl
+          }
+        }
+      }
+      
+      fileList.value.push({
+        name: originalUrl.substring(originalUrl.lastIndexOf('/') + 1),
+        url: displayUrl  // 使用签名URL用于显示
+      })
+    }
+    
     uploadList.value = []
     uploadNumber.value = 0
     emitUpdateModelValue()
@@ -161,19 +194,32 @@ const uploadSuccess: UploadProps['onSuccess'] = (res: any): void => {
 // 监听模型绑定值变动
 watch(
   () => props.modelValue,
-  async (val: string | string[]) => {
+  async (val: string | string[], oldVal: string | string[]) => {
     if (!val) {
       fileList.value = [] // fix：处理掉缓存，表单重置后上传组件的内容并没有重置
       originalUrls.value = []
       return
     }
 
-    fileList.value = [] // 保障数据为空
-    originalUrls.value = [] // 清空原始URL列表
+    const newUrls = val as string[]
+    const oldUrls = (oldVal as string[]) || []
+    
+    // 检查是否只是新增了URL（上传成功的情况）
+    const isAppending = oldUrls.length > 0 && 
+                        newUrls.length > oldUrls.length &&
+                        oldUrls.every((url, index) => url === newUrls[index])
+    
+    if (isAppending) {
+      // 只是新增，不需要重建整个列表，已经在 uploadSuccess 中处理了
+      return
+    }
+    
+    // 完全重建列表（初始化或外部修改的情况）
+    fileList.value = []
+    originalUrls.value = []
     
     // 遍历每个URL，如果需要签名则获取签名URL
-    const urls = val as string[]
-    for (const originalUrl of urls) {
+    for (const originalUrl of newUrls) {
       originalUrls.value.push(originalUrl) // 保存原始URL
       
       let displayUrl = originalUrl
