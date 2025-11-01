@@ -60,19 +60,25 @@ const imagePreview = async (imgUrl: string) => {
     
     // 只有需要签名时才获取签名 URL
     if (props.needSignature) {
-      // 从 URL 中提取路径
-      let path = imgUrl
-      try {
-        const urlObj = new URL(imgUrl)
-        path = urlObj.pathname
-      } catch (e) {
-        // 如果不是完整 URL，直接使用原始值作为路径
-        path = imgUrl
-      }
+      // 判断URL是否已经包含签名参数（如：X-Amz-Signature, sign, signature等）
+      const hasSignature = /[?&](X-Amz-Signature|sign|signature|x-cos-security-token)=/i.test(imgUrl)
       
-      // 获取带签名的访问 URL
-      const res = await FileApi.getFileAccessUrl(path)
-      previewUrl = res.data || imgUrl
+      // 如果URL已经包含签名，直接使用，否则获取新签名
+      if (!hasSignature) {
+        // 从 URL 中提取路径
+        let path = imgUrl
+        try {
+          const urlObj = new URL(imgUrl)
+          path = urlObj.pathname
+        } catch (e) {
+          // 如果不是完整 URL，直接使用原始值作为路径
+          path = imgUrl
+        }
+        
+        // 获取带签名的访问 URL
+        const res = await FileApi.getFileAccessUrl(path)
+        previewUrl = res.data || imgUrl
+      }
     }
     
     createImageViewer({
