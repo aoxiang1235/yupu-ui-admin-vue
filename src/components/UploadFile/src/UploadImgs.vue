@@ -123,6 +123,8 @@ const { uploadUrl, httpRequest } = useUpload(props.directory)
 const fileList = ref<UploadUserFile[]>([])
 const uploadNumber = ref<number>(0)
 const uploadList = ref<UploadUserFile[]>([])
+// 保存原始URL列表（用于表单提交）
+const originalUrls = ref<string[]>([])
 /**
  * @description 文件上传之前判断
  * @param rawFile 上传的文件
@@ -169,23 +171,61 @@ const uploadSuccess: UploadProps['onSuccess'] = (res: any): void => {
 // 监听模型绑定值变动
 watch(
   () => props.modelValue,
-  (val: string | string[]) => {
+  async (val: string | string[]) => {
     if (!val) {
       fileList.value = [] // fix：处理掉缓存，表单重置后上传组件的内容并没有重置
+      originalUrls.value = []
       return
     }
 
     fileList.value = [] // 保障数据为空
-    fileList.value.push(
-      ...(val as string[]).map((url) => ({ name: url.substring(url.lastIndexOf('/') + 1), url }))
-    )
+    originalUrls.value = [] // 清空原始URL列表
+    
+    // 遍历每个URL，如果需要签名则获取签名URL
+    const urls = val as string[]
+    for (const originalUrl of urls) {
+      originalUrls.value.push(originalUrl) // 保存原始URL
+      
+      let displayUrl = originalUrl
+      
+      // 如果需要签名
+      if (props.needSignature && originalUrl) {
+        // 检查是否已经有签名
+        const hasSignature = /[?&](X-Amz-Signature|sign|signature|x-cos-security-token)=/i.test(originalUrl)
+        
+        if (!hasSignature) {
+          // 没有签名，获取签名URL
+          try {
+            let path = originalUrl
+            try {
+              const urlObj = new URL(originalUrl)
+              path = urlObj.pathname
+            } catch (e) {
+              path = originalUrl
+            }
+            
+            const res = await FileApi.getFileAccessUrl(path)
+            displayUrl = res.data || originalUrl
+          } catch (error) {
+            console.error('获取签名URL失败:', error)
+            // 获取失败也使用原始URL
+            displayUrl = originalUrl
+          }
+        }
+      }
+      
+      fileList.value.push({
+        name: originalUrl.substring(originalUrl.lastIndexOf('/') + 1),
+        url: displayUrl  // 使用签名URL用于显示
+      })
+    }
   },
   { immediate: true, deep: true }
 )
 // 发送图片链接列表更新
 const emitUpdateModelValue = () => {
-  let result: string[] = fileList.value.map((file) => file.url!)
-  emit('update:modelValue', result)
+  // 使用原始URL列表进行更新（用于表单提交）
+  emit('update:modelValue', originalUrls.value)
 }
 // 删除图片
 const handleRemove = async (uploadFile: UploadFile) => {

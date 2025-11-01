@@ -15,7 +15,7 @@
       :show-file-list="false"
     >
       <template v-if="modelValue">
-        <img :src="modelValue" class="upload-image" />
+        <img :src="displayUrl || modelValue" class="upload-image" />
         <div class="upload-handle" @click.stop>
           <div v-if="!disabled" class="handle-icon" @click="editImg">
             <Icon icon="ep:edit" />
@@ -89,6 +89,54 @@ const { t } = useI18n() // 国际化
 const message = useMessage() // 消息弹窗
 // 生成组件唯一id
 const uuid = ref('id-' + generateUUID())
+
+// 用于显示的图片URL（带签名）
+const displayUrl = ref<string>('')
+
+// 监听modelValue变化，自动获取签名URL用于显示
+watch(
+  () => props.modelValue,
+  async (newUrl) => {
+    if (!newUrl) {
+      displayUrl.value = ''
+      return
+    }
+    
+    // 如果需要签名
+    if (props.needSignature) {
+      // 检查是否已经有签名
+      const hasSignature = /[?&](X-Amz-Signature|sign|signature|x-cos-security-token)=/i.test(newUrl)
+      
+      if (hasSignature) {
+        // 已经有签名，直接使用
+        displayUrl.value = newUrl
+      } else {
+        // 没有签名，获取签名URL
+        try {
+          let path = newUrl
+          try {
+            const urlObj = new URL(newUrl)
+            path = urlObj.pathname
+          } catch (e) {
+            path = newUrl
+          }
+          
+          const res = await FileApi.getFileAccessUrl(path)
+          displayUrl.value = res.data || newUrl
+        } catch (error) {
+          console.error('获取签名URL失败:', error)
+          // 获取失败也显示原始URL
+          displayUrl.value = newUrl
+        }
+      }
+    } else {
+      // 不需要签名，直接使用原始URL
+      displayUrl.value = newUrl
+    }
+  },
+  { immediate: true }
+)
+
 // 查看图片
 const imagePreview = async (imgUrl: string) => {
   try {
