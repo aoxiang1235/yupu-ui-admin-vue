@@ -146,6 +146,8 @@ interface UploadEmits {
 const emit = defineEmits<UploadEmits>()
 const uploadSuccess: UploadProps['onSuccess'] = async (res: any): Promise<void> => {
   message.success('上传成功')
+  console.log('[UploadImgs] 上传成功，返回URL:', res.data)
+  
   // 删除自身
   const index = fileList.value.findIndex((item) => item.response?.data === res.data)
   fileList.value.splice(index, 1)
@@ -154,7 +156,10 @@ const uploadSuccess: UploadProps['onSuccess'] = async (res: any): Promise<void> 
   const newUrl = res.data
   uploadList.value.push({ name: newUrl, url: newUrl })
   
+  console.log('[UploadImgs] 当前上传进度:', uploadList.value.length, '/', uploadNumber.value)
+  
   if (uploadList.value.length == uploadNumber.value) {
+    console.log('[UploadImgs] 所有文件上传完成，开始批量处理')
     // 所有文件上传完成，批量处理
     const newUrls = uploadList.value.map(item => item.url)
     
@@ -187,6 +192,9 @@ const uploadSuccess: UploadProps['onSuccess'] = async (res: any): Promise<void> 
     
     uploadList.value = []
     uploadNumber.value = 0
+    
+    console.log('[UploadImgs] 更新后的 originalUrls:', originalUrls.value)
+    console.log('[UploadImgs] 更新后的 fileList 数量:', fileList.value.length)
     emitUpdateModelValue()
   }
 }
@@ -205,15 +213,17 @@ watch(
     const oldUrls = (oldVal as string[]) || []
     
     // 检查是否只是新增了URL（上传成功的情况）
-    const isAppending = oldUrls.length > 0 && 
-                        newUrls.length > oldUrls.length &&
+    // 条件：新URL数量 > 旧URL数量，且所有旧URL都在新URL的前面（位置不变）
+    const isAppending = newUrls.length > oldUrls.length &&
                         oldUrls.every((url, index) => url === newUrls[index])
     
     if (isAppending) {
       // 只是新增，不需要重建整个列表，已经在 uploadSuccess 中处理了
+      console.log('[UploadImgs] 检测到追加操作，跳过重建')
       return
     }
     
+    console.log('[UploadImgs] 重建文件列表')
     // 完全重建列表（初始化或外部修改的情况）
     fileList.value = []
     originalUrls.value = []
