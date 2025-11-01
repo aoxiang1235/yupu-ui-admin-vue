@@ -26,7 +26,18 @@ export const deleteFile = (id: number) => {
 export const deleteFileByPath = (fileUrls: string | string[]) => {
   // 确保 fileUrls 是数组格式
   const urls = Array.isArray(fileUrls) ? fileUrls : [fileUrls]
-  return request.post({ url: '/infra/file/delete-cos-batch', params: { fileUrls: urls } })
+  
+  // 使用 FormData 格式传递数组参数
+  const formData = new FormData()
+  urls.forEach(url => {
+    formData.append('fileUrls', url)
+  })
+  
+  return request.post({ 
+    url: '/infra/file/delete-cos-batch', 
+    data: formData,
+    headersType: 'multipart/form-data'
+  })
 }
 
 // 批量删除文件
