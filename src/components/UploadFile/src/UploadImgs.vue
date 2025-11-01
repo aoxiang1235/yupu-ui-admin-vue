@@ -65,18 +65,8 @@ const imagePreview = async (imgUrl: string) => {
       
       // 如果URL已经包含签名，直接使用，否则获取新签名
       if (!hasSignature) {
-        // 从 URL 中提取路径
-        let path = imgUrl
-        try {
-          const urlObj = new URL(imgUrl)
-          path = urlObj.pathname
-        } catch (e) {
-          // 如果不是完整 URL，直接使用原始值作为路径
-          path = imgUrl
-        }
-        
-        // 获取带签名的访问 URL
-        const res = await FileApi.getFileAccessUrl(path)
+        // 直接传递完整的文件URL获取签名
+        const res = await FileApi.getFileAccessUrl(imgUrl)
         previewUrl = res.data || imgUrl
       }
     }
@@ -196,15 +186,8 @@ watch(
         if (!hasSignature) {
           // 没有签名，获取签名URL
           try {
-            let path = originalUrl
-            try {
-              const urlObj = new URL(originalUrl)
-              path = urlObj.pathname
-            } catch (e) {
-              path = originalUrl
-            }
-            
-            const res = await FileApi.getFileAccessUrl(path)
+            // 直接传递完整的文件URL
+            const res = await FileApi.getFileAccessUrl(originalUrl)
             displayUrl = res.data || originalUrl
           } catch (error) {
             console.error('获取签名URL失败:', error)
@@ -232,20 +215,11 @@ const handleRemove = async (uploadFile: UploadFile) => {
   // 如果开启了自动删除，并且有文件URL
   if (props.autoDelete && uploadFile.url) {
     try {
-      // 从 URL 中提取路径
-      let path = uploadFile.url
-      try {
-        const urlObj = new URL(uploadFile.url)
-        path = urlObj.pathname
-        // 去除查询参数（如签名参数）
-        path = path.split('?')[0]
-      } catch (e) {
-        // 如果不是完整 URL，直接使用原始值作为路径
-        path = uploadFile.url.split('?')[0]
-      }
+      // 去除签名参数，传递原始文件URL
+      const fileUrl = uploadFile.url.split('?')[0]
       
       // 调用后端删除文件
-      await FileApi.deleteFileByPath(path)
+      await FileApi.deleteFileByPath(fileUrl)
       message.success('文件删除成功')
     } catch (error) {
       console.error('删除文件失败:', error)

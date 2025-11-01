@@ -22,14 +22,16 @@ export const deleteFile = (id: number) => {
   return request.delete({ url: '/infra/file/delete?id=' + id })
 }
 
-// 根据路径删除文件
-export const deleteFileByPath = (path: string) => {
-  return request.delete({ url: '/infra/file/delete-cos-batch', params: { path } })
+// 批量删除COS文件
+export const deleteFileByPath = (fileUrls: string | string[]) => {
+  // 确保 fileUrls 是数组格式
+  const urls = Array.isArray(fileUrls) ? fileUrls : [fileUrls]
+  return request.post({ url: '/infra/file/delete-cos-batch', params: { fileUrls: urls } })
 }
 
 // 批量删除文件
 export const deleteFileList = (ids: number[]) => {
-  return request.delete({ url: '/infra/file/delete-list', params: { ids: ids.join(',') } })
+  return request.post({ url: '/infra/file/delete-list', data: { ids } })
 }
 
 // 获取文件预签名地址
@@ -55,6 +57,6 @@ export const updateFile = (data: any) => {
 }
 
 // 获取文件访问签名 URL
-export const getFileAccessUrl = (path: string) => {
-  return request.get({ url: '/infra/file/signed-url', params: { path } })
+export const getFileAccessUrl = (fileUrl: string) => {
+  return request.get({ url: '/infra/file/signed-url', params: { fileUrl } })
 }
