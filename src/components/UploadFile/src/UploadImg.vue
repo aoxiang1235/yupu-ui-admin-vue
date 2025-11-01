@@ -15,7 +15,11 @@
       :show-file-list="false"
     >
       <template v-if="modelValue">
-        <img :src="displayUrl || modelValue" class="upload-image" />
+        <img v-if="displayUrl" :src="displayUrl" class="upload-image" />
+        <div v-else class="upload-loading">
+          <Icon icon="ep:loading" class="loading-icon" />
+          <span>加载中...</span>
+        </div>
         <div class="upload-handle" @click.stop>
           <div v-if="!disabled" class="handle-icon" @click="editImg">
             <Icon icon="ep:edit" />
@@ -307,6 +311,33 @@ const uploadError = () => {
         .el-icon {
           font-size: 28px;
           color: var(--el-text-color-secondary);
+        }
+      }
+
+      .upload-loading {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        font-size: 12px;
+        color: var(--el-color-info);
+
+        .loading-icon {
+          font-size: 28px;
+          color: var(--el-color-primary);
+          animation: rotating 2s linear infinite;
+        }
+
+        @keyframes rotating {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
         }
       }
 
