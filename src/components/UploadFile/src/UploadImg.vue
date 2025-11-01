@@ -113,12 +113,15 @@ watch(
       } else {
         // 没有签名，获取签名URL
         try {
-          // 直接传递完整的文件URL
-          const res = await FileApi.getFileAccessUrl(newUrl)
-          displayUrl.value = res.data || newUrl
+          console.log('[UploadImg] 开始获取签名URL:', newUrl)
+          const signedUrl = await FileApi.getFileAccessUrl(newUrl)
+          console.log('[UploadImg] 获取签名URL成功:', signedUrl)
+          
+          // request.get 已经返回了 res.data，所以直接使用
+          displayUrl.value = signedUrl || newUrl
         } catch (error) {
-          console.error('获取签名URL失败:', error)
-          // 获取失败也显示原始URL
+          console.error('[UploadImg] 获取签名URL失败:', error)
+          // 获取失败也显示原始URL（可能无法访问）
           displayUrl.value = newUrl
         }
       }
@@ -143,8 +146,8 @@ const imagePreview = async (imgUrl: string) => {
       // 如果URL已经包含签名，直接使用，否则获取新签名
       if (!hasSignature) {
         // 直接传递完整的文件URL获取签名
-        const res = await FileApi.getFileAccessUrl(imgUrl)
-        previewUrl = res.data || imgUrl
+        const signedUrl = await FileApi.getFileAccessUrl(imgUrl)
+        previewUrl = signedUrl || imgUrl
       }
     }
     
