@@ -75,8 +75,7 @@ type FileTypes =
 
 // 接受父组件参数
 const props = defineProps({
-  modelValue: propTypes.string.def(''), // 原始URL（用于数据保存和提交）
-  displayValue: propTypes.string.def(''), // 显示URL（用于页面展示，带签名）
+  modelValue: propTypes.string.def(''), // 图片URL（组件内部自动处理：存储原始URL，显示签名URL）
   drag: propTypes.bool.def(true), // 是否支持拖拽上传 ==> 非必传（默认为 true）
   disabled: propTypes.bool.def(false), // 是否禁用上传组件 ==> 非必传（默认为 false）
   fileSize: propTypes.number.def(5), // 图片大小限制 ==> 非必传（默认为 5M）
@@ -87,7 +86,7 @@ const props = defineProps({
   showDelete: propTypes.bool.def(true), // 是否显示删除按钮
   showBtnText: propTypes.bool.def(true), // 是否显示按钮文字
   directory: propTypes.string.def(undefined), // 上传目录 ==> 非必传（默认为 undefined）
-  needSignature: propTypes.bool.def(true), // 当 displayValue 为空时，是否自动获取签名 URL ==> 非必传（默认为 true）
+  needSignature: propTypes.bool.def(true), // 是否需要获取签名 URL ==> 非必传（默认为 true）
   autoDelete: propTypes.bool.def(true) // 删除时是否自动调用后端删除文件 ==> 非必传（默认为 true）
 })
 const { t } = useI18n() // 国际化
@@ -97,47 +96,57 @@ const uuid = ref('id-' + generateUUID())
 
 // 用于显示的图片URL（带签名）
 const displayUrl = ref<string>('')
+// 原始URL（无签名，用于emit）
+const originalUrl = ref<string>('')
 
-// 监听 displayValue 和 modelValue 变化
+// 监听 modelValue 变化
 watch(
-  [() => props.displayValue, () => props.modelValue],
-  async ([newDisplayValue, newModelValue]) => {
-    // 优先使用 displayValue（后端返回的签名URL）
-    if (newDisplayValue) {
-      console.log('[UploadImg] 使用 displayValue:', newDisplayValue)
-      displayUrl.value = newDisplayValue
-      return
-    }
-    
-    // 如果没有 displayValue，使用 modelValue
-    if (!newModelValue) {
+  () => props.modelValue,
+  async (newUrl, oldUrl) => {
+    if (!newUrl) {
       displayUrl.value = ''
+      originalUrl.value = ''
       return
     }
     
-    // modelValue 有值但 displayValue 无值，需要自动获取签名
-    if (props.needSignature) {
-      // 检查 modelValue 是否已经有签名
-      const hasSignature = /[?&](X-Amz-Signature|sign|signature|x-cos-security-token)=/i.test(newModelValue)
+    // 检查URL是否包含签名参数
+    const hasSignature = /[?&](X-Amz-Signature|sign|signature|x-cos-security-token)=/i.test(newUrl)
+    
+    if (hasSignature) {
+      // URL包含签名（后端返回的），需要分离
+      console.log('[UploadImg] 检测到签名URL，自动分离并更新为原始URL')
+      // 原始URL：去除签名参数
+      const cleanUrl = newUrl.split('?')[0]
+      originalUrl.value = cleanUrl
+      // 显示URL：直接使用（带签名）
+      displayUrl.value = newUrl
       
-      if (hasSignature) {
-        // modelValue 已经有签名，直接使用
-        displayUrl.value = newModelValue
-      } else {
-        // 没有签名，获取签名URL
-        try {
-          console.log('[UploadImg] 开始获取签名URL:', newModelValue)
-          const signedUrl = await FileApi.getFileAccessUrl(newModelValue)
-          console.log('[UploadImg] 获取签名URL成功:', signedUrl)
-          displayUrl.value = signedUrl || newModelValue
-        } catch (error) {
-          console.error('[UploadImg] 获取签名URL失败:', error)
-          displayUrl.value = newModelValue
-        }
+      // 如果原始URL和当前modelValue不同，需要更新
+      if (cleanUrl !== newUrl) {
+        // 延迟emit，避免在watch中触发循环
+        nextTick(() => {
+          emit('update:modelValue', cleanUrl)
+        })
       }
     } else {
-      // 不需要签名，直接使用 modelValue
-      displayUrl.value = newModelValue
+      // URL不包含签名
+      originalUrl.value = newUrl
+      
+      if (props.needSignature) {
+        // 需要签名，自动获取
+        try {
+          console.log('[UploadImg] 开始获取签名URL:', newUrl)
+          const signedUrl = await FileApi.getFileAccessUrl(newUrl)
+          console.log('[UploadImg] 获取签名URL成功:', signedUrl)
+          displayUrl.value = signedUrl || newUrl
+        } catch (error) {
+          console.error('[UploadImg] 获取签名URL失败:', error)
+          displayUrl.value = newUrl
+        }
+      } else {
+        // 不需要签名
+        displayUrl.value = newUrl
+      }
     }
   },
   { immediate: true }
@@ -152,17 +161,14 @@ const imagePreview = (imgUrl: string) => {
   })
 }
 
-const emit = defineEmits(['update:modelValue', 'update:displayValue'])
+const emit = defineEmits(['update:modelValue'])
 
 const deleteImg = async () => {
   // 如果开启了自动删除，并且有图片URL
-  if (props.autoDelete && props.modelValue) {
+  if (props.autoDelete && originalUrl.value) {
     try {
-      // 去除签名参数，传递原始文件URL
-      const fileUrl = props.modelValue.split('?')[0]
-      
-      // 调用后端删除文件
-      await FileApi.deleteFileByPath(fileUrl)
+      // 使用原始URL删除文件
+      await FileApi.deleteFileByPath(originalUrl.value)
       message.success('文件删除成功')
     } catch (error) {
       console.error('删除文件失败:', error)
@@ -171,9 +177,8 @@ const deleteImg = async () => {
     }
   }
   
-  // 清空两个字段
+  // 清空URL
   emit('update:modelValue', '')
-  emit('update:displayValue', '')
 }
 
 const { uploadUrl, httpRequest } = useUpload(props.directory)
@@ -193,33 +198,11 @@ const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
 }
 
 // 图片上传成功提示
-const uploadSuccess: UploadProps['onSuccess'] = async (res: any): Promise<void> => {
+const uploadSuccess: UploadProps['onSuccess'] = (res: any): void => {
   message.success('上传成功')
-  const originalUrl = res.data
-  
-  // 更新 modelValue（原始URL）
-  emit('update:modelValue', originalUrl)
-  
-  // 如果需要签名，自动获取并更新 displayValue
-  if (props.needSignature) {
-    const hasSignature = /[?&](X-Amz-Signature|sign|signature|x-cos-security-token)=/i.test(originalUrl)
-    
-    if (!hasSignature) {
-      try {
-        const signedUrl = await FileApi.getFileAccessUrl(originalUrl)
-        emit('update:displayValue', signedUrl)
-      } catch (error) {
-        console.error('[UploadImg] 上传成功后获取签名失败:', error)
-        // 获取失败就不更新 displayValue，让 watch 处理
-      }
-    } else {
-      // 已有签名
-      emit('update:displayValue', originalUrl)
-    }
-  } else {
-    // 不需要签名
-    emit('update:displayValue', originalUrl)
-  }
+  // emit 原始URL（后端返回的应该就是原始URL）
+  emit('update:modelValue', res.data)
+  // watch 会自动监听并获取签名URL用于显示
 }
 
 // 图片上传错误提示
