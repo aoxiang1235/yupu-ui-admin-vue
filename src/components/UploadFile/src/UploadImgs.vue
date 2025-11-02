@@ -94,7 +94,8 @@ type FileTypes =
   | 'image/x-icon'
 
 const props = defineProps({
-  modelValue: propTypes.oneOfType<string | string[]>([String, Array<String>]).isRequired,
+  modelValue: propTypes.oneOfType<string | string[]>([String, Array<String>]).isRequired, // 原始URL列表（用于数据保存和提交）
+  displayValue: propTypes.array.def([]), // 显示URL列表（用于页面展示，带签名）
   drag: propTypes.bool.def(true), // 是否支持拖拽上传 ==> 非必传（默认为 true）
   disabled: propTypes.bool.def(false), // 是否禁用上传组件 ==> 非必传（默认为 false）
   limit: propTypes.number.def(5), // 最大图片上传数 ==> 非必传（默认为 5张）
@@ -104,7 +105,7 @@ const props = defineProps({
   width: propTypes.string.def('150px'), // 组件宽度 ==> 非必传（默认为 150px）
   borderradius: propTypes.string.def('8px'), // 组件边框圆角 ==> 非必传（默认为 8px）
   directory: propTypes.string.def(undefined), // 上传目录 ==> 非必传（默认为 undefined）
-  needSignature: propTypes.bool.def(true), // 预览时是否需要获取签名 URL ==> 非必传（默认为 true）
+  needSignature: propTypes.bool.def(true), // 当 displayValue 为空时，是否自动获取签名 URL ==> 非必传（默认为 true）
   autoDelete: propTypes.bool.def(true) // 删除时是否自动调用后端删除文件 ==> 非必传（默认为 true）
 })
 
@@ -141,6 +142,7 @@ const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
 // 图片上传成功
 interface UploadEmits {
   (e: 'update:modelValue', value: string[]): void
+  (e: 'update:displayValue', value: string[]): void
 }
 
 const emit = defineEmits<UploadEmits>()
@@ -201,21 +203,23 @@ const uploadSuccess: UploadProps['onSuccess'] = async (res: any): Promise<void> 
 
 // 监听模型绑定值变动
 watch(
-  () => props.modelValue,
-  async (val: string | string[], oldVal: string | string[]) => {
-    if (!val) {
-      fileList.value = [] // fix：处理掉缓存，表单重置后上传组件的内容并没有重置
+  [() => props.displayValue, () => props.modelValue],
+  async ([newDisplayValue, newModelValue], [, oldModelValue]) => {
+    const displayUrls = (newDisplayValue as string[]) || []
+    const modelUrls = (newModelValue as string[]) || []
+    
+    // 如果两个都为空，清空
+    if (displayUrls.length === 0 && modelUrls.length === 0) {
+      fileList.value = []
       originalUrls.value = []
       return
     }
-
-    const newUrls = val as string[]
-    const oldUrls = (oldVal as string[]) || []
+    
+    const oldUrls = (oldModelValue as string[]) || []
     
     // 检查是否只是新增了URL（上传成功的情况）
-    // 条件：新URL数量 > 旧URL数量，且所有旧URL都在新URL的前面（位置不变）
-    const isAppending = newUrls.length > oldUrls.length &&
-                        oldUrls.every((url, index) => url === newUrls[index])
+    const isAppending = modelUrls.length > oldUrls.length &&
+                        oldUrls.every((url, index) => url === modelUrls[index])
     
     if (isAppending) {
       // 只是新增，不需要重建整个列表，已经在 uploadSuccess 中处理了
@@ -228,43 +232,59 @@ watch(
     fileList.value = []
     originalUrls.value = []
     
-    // 遍历每个URL，如果需要签名则获取签名URL
-    for (const originalUrl of newUrls) {
-      originalUrls.value.push(originalUrl) // 保存原始URL
-      
-      let displayUrl = originalUrl
-      
-      // 如果需要签名
-      if (props.needSignature && originalUrl) {
-        // 检查是否已经有签名
-        const hasSignature = /[?&](X-Amz-Signature|sign|signature|x-cos-security-token)=/i.test(originalUrl)
+    // 优先使用 displayValue（后端返回的签名URL列表）
+    if (displayUrls.length > 0) {
+      console.log('[UploadImgs] 使用 displayValue 构建列表')
+      for (let i = 0; i < modelUrls.length; i++) {
+        const originalUrl = modelUrls[i]
+        const displayUrl = displayUrls[i] || originalUrl
         
-        if (!hasSignature) {
-          // 没有签名，获取签名URL
-          try {
-            // 直接传递完整的文件URL
-            const signedUrl = await FileApi.getFileAccessUrl(originalUrl)
-            displayUrl = signedUrl || originalUrl
-          } catch (error) {
-            console.error('获取签名URL失败:', error)
-            // 获取失败也使用原始URL
-            displayUrl = originalUrl
+        originalUrls.value.push(originalUrl)
+        fileList.value.push({
+          name: originalUrl.substring(originalUrl.lastIndexOf('/') + 1),
+          url: displayUrl
+        })
+      }
+    } else {
+      // 没有 displayValue，使用 modelValue 并自动获取签名
+      console.log('[UploadImgs] 使用 modelValue 构建列表，需要获取签名')
+      for (const originalUrl of modelUrls) {
+        originalUrls.value.push(originalUrl)
+        
+        let displayUrl = originalUrl
+        
+        // 如果需要签名
+        if (props.needSignature && originalUrl) {
+          const hasSignature = /[?&](X-Amz-Signature|sign|signature|x-cos-security-token)=/i.test(originalUrl)
+          
+          if (!hasSignature) {
+            try {
+              const signedUrl = await FileApi.getFileAccessUrl(originalUrl)
+              displayUrl = signedUrl || originalUrl
+            } catch (error) {
+              console.error('获取签名URL失败:', error)
+              displayUrl = originalUrl
+            }
           }
         }
+        
+        fileList.value.push({
+          name: originalUrl.substring(originalUrl.lastIndexOf('/') + 1),
+          url: displayUrl
+        })
       }
-      
-      fileList.value.push({
-        name: originalUrl.substring(originalUrl.lastIndexOf('/') + 1),
-        url: displayUrl  // 使用签名URL用于显示
-      })
     }
   },
   { immediate: true, deep: true }
 )
 // 发送图片链接列表更新
 const emitUpdateModelValue = () => {
-  // 使用原始URL列表进行更新（用于表单提交）
+  // 更新 modelValue（原始URL列表，用于表单提交）
   emit('update:modelValue', originalUrls.value)
+  
+  // 更新 displayValue（显示URL列表，带签名）
+  const displayUrls = fileList.value.map(file => file.url!)
+  emit('update:displayValue', displayUrls)
 }
 // 删除图片
 const handleRemove = async (uploadFile: UploadFile) => {
