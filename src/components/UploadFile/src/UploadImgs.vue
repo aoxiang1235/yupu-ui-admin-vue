@@ -268,6 +268,13 @@ const emitUpdateModelValue = () => {
 }
 // 删除图片
 const handleRemove = async (uploadFile: UploadFile) => {
+  // 找到要删除的文件在列表中的索引
+  const fileIndex = fileList.value.findIndex(
+    (item) => item.url === uploadFile.url && item.name === uploadFile.name
+  )
+  
+  if (fileIndex === -1) return
+  
   // 如果开启了自动删除，并且有文件URL
   if (props.autoDelete && uploadFile.url) {
     try {
@@ -284,14 +291,14 @@ const handleRemove = async (uploadFile: UploadFile) => {
     }
   }
   
-  // 从文件列表中移除
-  fileList.value = fileList.value.filter(
-    (item) => item.url !== uploadFile.url || item.name !== uploadFile.name
-  )
-  emit(
-    'update:modelValue',
-    fileList.value.map((file) => file.url!)
-  )
+  // 从显示列表中移除
+  fileList.value.splice(fileIndex, 1)
+  
+  // 从原始URL列表中移除（保持索引一致）
+  originalUrls.value.splice(fileIndex, 1)
+  
+  // 发送原始URL列表更新
+  emitUpdateModelValue()
 }
 
 // 图片上传错误提示
