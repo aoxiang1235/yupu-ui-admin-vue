@@ -25,7 +25,7 @@
             <Icon icon="ep:edit" />
             <span v-if="showBtnText">{{ t('action.edit') }}</span>
           </div>
-          <div class="handle-icon" @click="imagePreview(modelValue)">
+          <div class="handle-icon" @click="imagePreview(displayUrl || modelValue)">
             <Icon icon="ep:zoom-in" />
             <span v-if="showBtnText">{{ t('action.detail') }}</span>
           </div>
@@ -138,31 +138,12 @@ watch(
 )
 
 // 查看图片
-const imagePreview = async (imgUrl: string) => {
-  try {
-    let previewUrl = imgUrl
-    
-    // 只有需要签名时才获取签名 URL
-    if (props.needSignature) {
-      // 判断URL是否已经包含签名参数（如：X-Amz-Signature, sign, signature等）
-      const hasSignature = /[?&](X-Amz-Signature|sign|signature|x-cos-security-token)=/i.test(imgUrl)
-      
-      // 如果URL已经包含签名，直接使用，否则获取新签名
-      if (!hasSignature) {
-        // 直接传递完整的文件URL获取签名
-        const signedUrl = await FileApi.getFileAccessUrl(imgUrl)
-        previewUrl = signedUrl || imgUrl
-      }
-    }
-    
-    createImageViewer({
-      zIndex: 9999999,
-      urlList: [previewUrl]
-    })
-  } catch (error) {
-    console.error('获取图片访问链接失败:', error)
-    message.error('获取图片访问链接失败')
-  }
+const imagePreview = (imgUrl: string) => {
+  // 直接使用传入的URL（已经是签名URL或不需要签名的URL）
+  createImageViewer({
+    zIndex: 9999999,
+    urlList: [imgUrl]
+  })
 }
 
 const emit = defineEmits(['update:modelValue'])
