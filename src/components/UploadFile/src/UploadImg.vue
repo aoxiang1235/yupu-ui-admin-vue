@@ -51,13 +51,16 @@
 </template>
 
 <script lang="ts" setup>
+import { ref, watch, nextTick } from 'vue'
 import type { UploadProps } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 
 import { generateUUID } from '@/utils'
 import { propTypes } from '@/utils/propTypes'
 import { createImageViewer } from '@/components/ImageViewer'
 import { useUpload } from '@/components/UploadFile/src/useUpload'
 import * as FileApi from '@/api/infra/file'
+import { useMessage } from '@/hooks/web/useMessage'
 
 defineOptions({ name: 'UploadImg' })
 
@@ -113,20 +116,21 @@ watch(
     const hasSignature = /[?&](X-Amz-Signature|sign|signature|x-cos-security-token)=/i.test(newUrl)
     
     if (hasSignature) {
-      // URL包含签名（后端返回的），需要分离
-      console.log('[UploadImg] 检测到签名URL，自动分离并更新为原始URL')
-      // 原始URL：去除签名参数
-      const cleanUrl = newUrl.split('?')[0]
-      originalUrl.value = cleanUrl
-      // 显示URL：直接使用（带签名）
-      displayUrl.value = newUrl
-      
-      // 如果原始URL和当前modelValue不同，需要更新
-      if (cleanUrl !== newUrl) {
-        // 延迟emit，避免在watch中触发循环
-        nextTick(() => {
-          emit('update:modelValue', cleanUrl)
-        })
+      if (props.needSignature) {
+        // URL包含签名，且需要分离重新签名
+        console.log('[UploadImg] 检测到签名URL，自动分离并更新为原始URL')
+        const cleanUrl = newUrl.split('?')[0]
+        originalUrl.value = cleanUrl
+        displayUrl.value = newUrl
+        if (cleanUrl !== newUrl) {
+          nextTick(() => {
+            emit('update:modelValue', cleanUrl)
+          })
+        }
+      } else {
+        // URL包含签名，但无需重新签名，直接保留
+        originalUrl.value = newUrl
+        displayUrl.value = newUrl
       }
     } else {
       // URL不包含签名
