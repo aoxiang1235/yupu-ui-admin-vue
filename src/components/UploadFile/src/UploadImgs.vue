@@ -42,6 +42,7 @@
   </div>
 </template>
 <script lang="ts" setup>
+import { ref, watch, nextTick } from 'vue'
 import type { UploadFile, UploadProps, UploadUserFile } from 'element-plus'
 import { ElNotification } from 'element-plus'
 import { createImageViewer } from '@/components/ImageViewer'
@@ -49,6 +50,7 @@ import { createImageViewer } from '@/components/ImageViewer'
 import { propTypes } from '@/utils/propTypes'
 import { useUpload } from '@/components/UploadFile/src/useUpload'
 import * as FileApi from '@/api/infra/file'
+import { useMessage } from '@/hooks/web/useMessage'
 
 defineOptions({ name: 'UploadImgs' })
 
@@ -229,7 +231,7 @@ watch(
     fileList.value = []
     originalUrls.value = []
     
-    let hasAnySignature = false  // 标记是否有任何URL包含签名
+    let hasAnySignature = false  // 标记是否有任何URL包含签名（仅在需要签名时使用）
     
     // 处理每个URL
     for (const url of newUrls) {
@@ -239,12 +241,16 @@ watch(
       let originalUrlValue = url
       let displayUrlValue = url
       
-      if (hasSignature) {
-        // URL包含签名（后端返回的），自动分离
+      if (hasSignature && props.needSignature) {
+        // URL包含签名（后端返回的），且需要重新签名
         console.log('[UploadImgs] 检测到签名URL，自动分离')
         hasAnySignature = true
         originalUrlValue = url.split('?')[0]  // 去除签名
         displayUrlValue = url  // 保持签名用于显示
+      } else if (hasSignature && !props.needSignature) {
+        // URL包含签名，但不需要重新签名，直接保留
+        originalUrlValue = url
+        displayUrlValue = url
       } else {
         // URL不包含签名
         originalUrlValue = url
@@ -270,8 +276,8 @@ watch(
       })
     }
     
-    // 如果检测到任何签名URL，自动更新为原始URL列表
-    if (hasAnySignature) {
+    // 如果检测到任何签名URL且需要重新签名，自动更新为原始URL列表
+    if (hasAnySignature && props.needSignature) {
       console.log('[UploadImgs] 自动更新为原始URL列表')
       nextTick(() => {
         emit('update:modelValue', originalUrls.value)
