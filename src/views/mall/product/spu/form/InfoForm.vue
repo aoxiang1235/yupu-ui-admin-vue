@@ -66,6 +66,18 @@
         :auto-delete="!isDetail"
       />
     </el-form-item>
+    <el-form-item v-if="isDetail && formData.sliderPicUrls?.length" label="轮播图预览">
+      <div class="slider-preview">
+        <el-image
+          v-for="(url, index) in formData.sliderPicUrls"
+          :key="index"
+          :src="url"
+          fit="cover"
+          class="slider-preview__img"
+          @click="handlePreview(index)"
+        />
+      </div>
+    </el-form-item>
   </el-form>
 </template>
 <script lang="ts" setup>
@@ -78,6 +90,7 @@ import * as ProductCategoryApi from '@/api/mall/product/category'
 import { CategoryVO } from '@/api/mall/product/category'
 import * as ProductBrandApi from '@/api/mall/product/brand'
 import { BrandVO } from '@/api/mall/product/brand'
+import { createImageViewer } from '@/components/ImageViewer'
 
 defineOptions({ name: 'ProductSpuInfoForm' })
 const props = defineProps({
@@ -150,4 +163,32 @@ onMounted(async () => {
   // 获取商品品牌列表
   brandList.value = await ProductBrandApi.getSimpleBrandList()
 })
+
+const handlePreview = (index: number) => {
+  const urls = formData.sliderPicUrls || []
+  if (!urls.length) {
+    return
+  }
+  createImageViewer({
+    urlList: urls,
+    initialIndex: index,
+    zIndex: 9999999
+  })
+}
 </script>
+
+<style scoped>
+.slider-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.slider-preview__img {
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  border: 1px solid var(--el-border-color);
+  cursor: pointer;
+}
+</style>
