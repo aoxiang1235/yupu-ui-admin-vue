@@ -207,68 +207,74 @@ const uploadSuccess: UploadProps['onSuccess'] = async (res: any): Promise<void> 
 watch(
   () => props.modelValue,
   async (val: string | string[], oldVal: string | string[]) => {
-    const newUrls = (val as string[]) || []
-    console.log('[UploadImgs] watch newUrls:', newUrls)
+    const newUrlsRaw = val as any
+    console.log('[UploadImgs] watch raw modelValue:', newUrlsRaw)
+    const newUrls = Array.isArray(newUrlsRaw) ? newUrlsRaw : []
+    console.log('[UploadImgs] watch normalized array length:', newUrls.length)
 
-    // 如果为空，清空
     if (newUrls.length === 0) {
       fileList.value = []
       originalUrls.value = []
       console.log('[UploadImgs] newUrls 为空，清空 fileList')
       return
     }
-    
+
     const oldUrls = (oldVal as string[]) || []
-    
-    // 检查是否只是新增了URL（上传成功的情况）
+
     const isAppending = newUrls.length > oldUrls.length &&
-                        oldUrls.every((url, index) => url === newUrls[index])
-    
+                        oldUrls.every((url, index) => url === oldUrls[index])
+
     if (isAppending) {
-      // 只是新增，不需要重建整个列表，已经在 uploadSuccess 中处理了
       console.log('[UploadImgs] 检测到追加操作，跳过重建')
       return
     }
-    
+
     console.log('[UploadImgs] 重建文件列表，URL数量:', newUrls.length)
-    // 完全重建列表（初始化或外部修改的情况）
     fileList.value = []
     originalUrls.value = []
-    
-    let hasAnySignature = false  // 标记是否有任何URL包含签名（仅在需要签名时使用）
-    
-    // 处理每个URL
-    for (const url of newUrls) {
-      // 检查URL是否包含签名参数
+
+    let hasAnySignature = false
+
+    for (const item of newUrls) {
+      let url = ''
+      if (typeof item === 'string') {
+        url = item
+      } else if (item && typeof item === 'object') {
+        url = item.url || item.response?.data || ''
+      }
+
+      if (!url) {
+        console.warn('[UploadImgs] 跳过无效的图片项:', item)
+        continue
+      }
+
       const hasSignature = /[?&](X-Amz-Signature|sign|signature|x-cos-security-token)=/i.test(url)
-      
+
       let originalUrlValue = url
       let displayUrlValue = url
-      
+
       if (hasSignature && props.needSignature) {
-        // URL包含签名（后端返回的），且需要重新签名
-        console.log('[UploadImgs] 检测到签名URL，自动分离')
+        console.log('[UploadImgs] 检测到签名URL，自动分离:', url)
         hasAnySignature = true
         const cleanUrl = url.split('?')[0]
-        originalUrlValue = cleanUrl  // 去除签名
-        displayUrlValue = url  // 保持签名用于显示
+        originalUrlValue = cleanUrl
+        displayUrlValue = url
         signedUrlCache.set(cleanUrl, url)
       } else if (hasSignature && !props.needSignature) {
-        // URL包含签名，但不需要重新签名，直接保留
         originalUrlValue = url
         displayUrlValue = url
       } else {
-        // URL不包含签名
         originalUrlValue = url
-        
+
         if (props.needSignature) {
-          // 需要签名，先尝试读取缓存
           const cachedSigned = signedUrlCache.get(url)
           if (cachedSigned) {
+            console.log('[UploadImgs] 使用缓存签名 URL:', cachedSigned)
             displayUrlValue = cachedSigned
           } else {
             try {
               const signedUrl = await FileApi.getFileAccessUrl(url)
+              console.log('[UploadImgs] 重新获取签名成功:', signedUrl)
               displayUrlValue = signedUrl || url
               if (signedUrl) {
                 signedUrlCache.set(url, signedUrl)
@@ -282,15 +288,14 @@ watch(
           displayUrlValue = url
         }
       }
-      
-      originalUrls.value.push(originalUrlValue)  // 保存原始URL
+
+      originalUrls.value.push(originalUrlValue)
       fileList.value.push({
         name: originalUrlValue.substring(originalUrlValue.lastIndexOf('/') + 1),
-        url: displayUrlValue  // 显示签名URL
+        url: displayUrlValue
       })
     }
-    
-    // 如果检测到任何签名URL且需要重新签名，自动更新为原始URL列表
+
     if (hasAnySignature && props.needSignature) {
       console.log('[UploadImgs] 自动更新为原始URL列表')
       nextTick(() => {
