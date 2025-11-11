@@ -170,9 +170,12 @@ const submitForm = async () => {
     })
     // 处理轮播图列表
     const newSliderPicUrls: any[] = []
-    deepCopyFormData.sliderPicUrls!.forEach((item: any) => {
-      // 如果是前端选的图
-      typeof item === 'object' ? newSliderPicUrls.push(item.url) : newSliderPicUrls.push(item)
+    deepCopyFormData.sliderPicUrls!.forEach((item) => {
+      const rawUrl = typeof item === 'object' ? item.url : item
+      if (typeof rawUrl === 'string') {
+        const cleanUrl = rawUrl.split('?')[0]
+        newSliderPicUrls.push(cleanUrl)
+      }
     })
     deepCopyFormData.sliderPicUrls = newSliderPicUrls
     // 校验都通过后提交表单

@@ -62,7 +62,7 @@
       <UploadImgs
         v-model="formData.sliderPicUrls"
         :disabled="isDetail"
-        :need-signature="!isDetail"
+        :need-signature="false"
         :auto-delete="!isDetail"
       />
     </el-form-item>
@@ -132,6 +132,7 @@ watch(
     }
     copyValueToTarget(formData, data)
     const sliderPicUrls = (data as any).sliderPicUrls
+    console.log('[InfoForm] 接收到的 sliderPicUrls:', sliderPicUrls)
     if (typeof sliderPicUrls === 'string') {
       try {
         const parsed = JSON.parse(sliderPicUrls)
@@ -150,6 +151,7 @@ watch(
           .filter((item: string) => item)
       }
     }
+    console.log('[InfoForm] 转换后的 sliderPicUrls:', formData.sliderPicUrls)
   },
   {
     immediate: true

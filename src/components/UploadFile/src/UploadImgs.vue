@@ -208,11 +208,13 @@ watch(
   () => props.modelValue,
   async (val: string | string[], oldVal: string | string[]) => {
     const newUrls = (val as string[]) || []
-    
+    console.log('[UploadImgs] watch newUrls:', newUrls)
+
     // 如果为空，清空
     if (newUrls.length === 0) {
       fileList.value = []
       originalUrls.value = []
+      console.log('[UploadImgs] newUrls 为空，清空 fileList')
       return
     }
     
@@ -295,6 +297,8 @@ watch(
         emit('update:modelValue', originalUrls.value)
       })
     }
+
+    console.log('[UploadImgs] 构建后的 fileList:', fileList.value)
   },
   { immediate: true, deep: true }
 )
