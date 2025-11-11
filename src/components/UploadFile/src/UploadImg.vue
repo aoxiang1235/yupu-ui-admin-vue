@@ -62,6 +62,8 @@ import { useUpload } from '@/components/UploadFile/src/useUpload'
 import * as FileApi from '@/api/infra/file'
 import { useMessage } from '@/hooks/web/useMessage'
 
+const signedUrlCache = new Map<string, string>()
+
 defineOptions({ name: 'UploadImg' })
 
 type FileTypes =
@@ -122,6 +124,7 @@ watch(
         const cleanUrl = newUrl.split('?')[0]
         originalUrl.value = cleanUrl
         displayUrl.value = newUrl
+        signedUrlCache.set(cleanUrl, newUrl)
         if (cleanUrl !== newUrl) {
           nextTick(() => {
             emit('update:modelValue', cleanUrl)
@@ -137,15 +140,23 @@ watch(
       originalUrl.value = newUrl
       
       if (props.needSignature) {
-        // 需要签名，自动获取
-        try {
-          console.log('[UploadImg] 开始获取签名URL:', newUrl)
-          const signedUrl = await FileApi.getFileAccessUrl(newUrl)
-          console.log('[UploadImg] 获取签名URL成功:', signedUrl)
-          displayUrl.value = signedUrl || newUrl
-        } catch (error) {
-          console.error('[UploadImg] 获取签名URL失败:', error)
-          displayUrl.value = newUrl
+        // 需要签名，先尝试使用缓存
+        const cachedSigned = signedUrlCache.get(newUrl)
+        if (cachedSigned) {
+          displayUrl.value = cachedSigned
+        } else {
+          try {
+            console.log('[UploadImg] 开始获取签名URL:', newUrl)
+            const signedUrl = await FileApi.getFileAccessUrl(newUrl)
+            console.log('[UploadImg] 获取签名URL成功:', signedUrl)
+            displayUrl.value = signedUrl || newUrl
+            if (signedUrl) {
+              signedUrlCache.set(newUrl, signedUrl)
+            }
+          } catch (error) {
+            console.error('[UploadImg] 获取签名URL失败:', error)
+            displayUrl.value = newUrl
+          }
         }
       } else {
         // 不需要签名
@@ -180,6 +191,8 @@ const deleteImg = async () => {
       // 即使删除失败，也清空图片URL（因为可能是文件已经不存在）
     }
   }
+  
+  signedUrlCache.delete(originalUrl.value)
   
   // 清空URL
   emit('update:modelValue', '')

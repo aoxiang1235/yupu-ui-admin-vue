@@ -52,6 +52,8 @@ import { useUpload } from '@/components/UploadFile/src/useUpload'
 import * as FileApi from '@/api/infra/file'
 import { useMessage } from '@/hooks/web/useMessage'
 
+const signedUrlCache = new Map<string, string>()
+
 defineOptions({ name: 'UploadImgs' })
 
 const message = useMessage() // 消息弹窗
@@ -245,8 +247,10 @@ watch(
         // URL包含签名（后端返回的），且需要重新签名
         console.log('[UploadImgs] 检测到签名URL，自动分离')
         hasAnySignature = true
-        originalUrlValue = url.split('?')[0]  // 去除签名
+        const cleanUrl = url.split('?')[0]
+        originalUrlValue = cleanUrl  // 去除签名
         displayUrlValue = url  // 保持签名用于显示
+        signedUrlCache.set(cleanUrl, url)
       } else if (hasSignature && !props.needSignature) {
         // URL包含签名，但不需要重新签名，直接保留
         originalUrlValue = url
@@ -256,13 +260,21 @@ watch(
         originalUrlValue = url
         
         if (props.needSignature) {
-          // 需要签名，自动获取
-          try {
-            const signedUrl = await FileApi.getFileAccessUrl(url)
-            displayUrlValue = signedUrl || url
-          } catch (error) {
-            console.error('[UploadImgs] 获取签名URL失败:', error)
-            displayUrlValue = url
+          // 需要签名，先尝试读取缓存
+          const cachedSigned = signedUrlCache.get(url)
+          if (cachedSigned) {
+            displayUrlValue = cachedSigned
+          } else {
+            try {
+              const signedUrl = await FileApi.getFileAccessUrl(url)
+              displayUrlValue = signedUrl || url
+              if (signedUrl) {
+                signedUrlCache.set(url, signedUrl)
+              }
+            } catch (error) {
+              console.error('[UploadImgs] 获取签名URL失败:', error)
+              displayUrlValue = url
+            }
           }
         } else {
           displayUrlValue = url
@@ -321,7 +333,10 @@ const handleRemove = async (uploadFile: UploadFile) => {
   fileList.value.splice(fileIndex, 1)
   
   // 从原始URL列表中移除（保持索引一致）
-  originalUrls.value.splice(fileIndex, 1)
+  const removedOriginal = originalUrls.value.splice(fileIndex, 1)[0]
+  if (removedOriginal) {
+    signedUrlCache.delete(removedOriginal)
+  }
   
   // 发送原始URL列表更新
   emitUpdateModelValue()
