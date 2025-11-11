@@ -61,12 +61,12 @@
     <el-form-item label="商品轮播图" prop="sliderPicUrls">
       <UploadImgs
         v-model="formData.sliderPicUrls"
-        :disabled="isDetail"
+        :disabled="!isUpdate"
         :need-signature="false"
-        :auto-delete="!isDetail"
+        :auto-delete="isUpdate"
       />
     </el-form-item>
-    <el-form-item v-if="isDetail && formData.sliderPicUrls?.length" label="轮播图预览">
+    <el-form-item v-if="!isUpdate && formData.sliderPicUrls?.length" label="轮播图预览">
       <div class="slider-preview">
         <el-image
           v-for="(url, index) in formData.sliderPicUrls"
@@ -98,7 +98,8 @@ const props = defineProps({
     type: Object as PropType<Spu>,
     default: () => {}
   },
-  isDetail: propTypes.bool.def(false) // 是否作为详情组件
+  isDetail: propTypes.bool.def(false),
+  isUpdate: propTypes.bool.def(false)
 })
 
 const message = useMessage() // 消息弹窗
@@ -133,7 +134,7 @@ watch(
     copyValueToTarget(formData, data)
     const sliderPicUrls = (data as any).sliderPicUrls
     console.log('[InfoForm] 接收到的 sliderPicUrls:', sliderPicUrls)
-    if (typeof sliderPicUrls === 'string') {
+    if (props.isUpdate && typeof sliderPicUrls === 'string') {
       try {
         const parsed = JSON.parse(sliderPicUrls)
         if (Array.isArray(parsed)) {

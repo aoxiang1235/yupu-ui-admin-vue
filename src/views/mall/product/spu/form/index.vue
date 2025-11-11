@@ -6,6 +6,7 @@
           ref="infoRef"
           v-model:activeName="activeName"
           :is-detail="isDetail"
+          :is-update="!isDetail"
           :propFormData="formData"
         />
       </el-tab-pane>
