@@ -131,6 +131,25 @@ watch(
       return
     }
     copyValueToTarget(formData, data)
+    const sliderPicUrls = (data as any).sliderPicUrls
+    if (typeof sliderPicUrls === 'string') {
+      try {
+        const parsed = JSON.parse(sliderPicUrls)
+        if (Array.isArray(parsed)) {
+          formData.sliderPicUrls = parsed.filter((item: any) => typeof item === 'string')
+        } else {
+          formData.sliderPicUrls = sliderPicUrls
+            .split(',')
+            .map((item: string) => item.trim())
+            .filter((item: string) => item)
+        }
+      } catch {
+        formData.sliderPicUrls = sliderPicUrls
+          .split(',')
+          .map((item: string) => item.trim())
+          .filter((item: string) => item)
+      }
+    }
   },
   {
     immediate: true
@@ -185,7 +204,7 @@ const handlePreview = (index: number) => {
 }
 
 .slider-preview__img {
-  width: 120px;
+  width: 120px; 
   height: 120px;
   border-radius: 8px;
   border: 1px solid var(--el-border-color);
