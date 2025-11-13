@@ -58,10 +58,9 @@
         height="80px"
       />
     </el-form-item>
-    <el-form-item label="商品轮播图" prop="sliderPicUrls">
+    <el-form-item label="商品轮播图" v-if="isUpdate" prop="sliderPicUrls">
       <UploadImgs
         v-model="formData.sliderPicUrls"
-        :disabled="!isUpdate"
         :need-signature="false"
         :auto-delete="isUpdate"
       />
@@ -132,8 +131,14 @@ watch(
       return
     }
     copyValueToTarget(formData, data)
-    const sliderPicUrls = (data as any).sliderPicUrls
+    let sliderPicUrls: any = (data as any).sliderPicUrls
     console.log('[InfoForm] 接收到的 sliderPicUrls:', sliderPicUrls)
+
+    // 如果是对象形式（如 {0: 'url0', 1: 'url1'}），先转成数组
+    if (sliderPicUrls && typeof sliderPicUrls === 'object' && !Array.isArray(sliderPicUrls)) {
+      sliderPicUrls = Object.values(sliderPicUrls)
+    }
+
     if (props.isUpdate && typeof sliderPicUrls === 'string') {
       try {
         const parsed = JSON.parse(sliderPicUrls)
@@ -151,12 +156,22 @@ watch(
           .map((item: string) => item.trim())
           .filter((item: string) => item)
       }
+    } else if (Array.isArray(sliderPicUrls)) {
+      formData.sliderPicUrls = sliderPicUrls.filter((item: any) => typeof item === 'string')
     }
     console.log('[InfoForm] 转换后的 sliderPicUrls:', formData.sliderPicUrls)
   },
   {
     immediate: true
   }
+)
+
+watch(
+  () => formData.sliderPicUrls,
+  (val) => {
+    console.log('[InfoForm] formData.sliderPicUrls 变更为:', val)
+  },
+  { deep: true, immediate: true }
 )
 
 /** 表单校验 */
@@ -207,7 +222,7 @@ const handlePreview = (index: number) => {
 }
 
 .slider-preview__img {
-  width: 120px; 
+  width: 120px;
   height: 120px;
   border-radius: 8px;
   border: 1px solid var(--el-border-color);
