@@ -61,7 +61,7 @@
     <el-form-item label="商品轮播图" v-if="isUpdate" prop="sliderPicUrls">
       <UploadImgs
         v-model="formData.sliderPicUrls"
-        :need-signature="false"
+        :need-signature="true"
         :auto-delete="isUpdate"
       />
     </el-form-item>
