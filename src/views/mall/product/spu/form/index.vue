@@ -1,5 +1,5 @@
 <template>
-  <ContentWrap v-loading="formLoading">
+  <ContentWrap v-loading="formLoading || uploading">
     <el-tabs v-model="activeName">
       <el-tab-pane label="基础设置" name="info">
         <InfoForm
@@ -8,6 +8,7 @@
           :is-detail="isDetail"
           :is-update="!isDetail"
           :propFormData="formData"
+          @uploading-change="handleUploadingChange"
         />
       </el-tab-pane>
       <el-tab-pane label="价格库存" name="sku">
@@ -45,10 +46,16 @@
     </el-tabs>
     <el-form>
       <el-form-item style="float: right">
-        <el-button v-if="!isDetail" :loading="formLoading" type="primary" @click="submitForm">
+        <el-button
+          v-if="!isDetail"
+          :loading="formLoading"
+          :disabled="uploading"
+          type="primary"
+          @click="submitForm"
+        >
           保存
         </el-button>
-        <el-button @click="close">返回</el-button>
+        <el-button :disabled="formLoading || uploading" @click="close">返回</el-button>
       </el-form-item>
     </el-form>
   </ContentWrap>
@@ -73,6 +80,7 @@ const { params, name } = useRoute() // 查询参数
 const { delView } = useTagsViewStore() // 视图操作
 
 const formLoading = ref(false) // 表单的加载中：1）修改时的数据加载；2）提交的按钮禁用
+const uploading = ref(false) // 是否存在上传中的图片
 const activeName = ref('info') // Tag 激活的窗口
 const isDetail = ref(false) // 是否查看详情
 const infoRef = ref() // 商品信息 Ref
@@ -148,6 +156,10 @@ const getDetail = async () => {
 
 /** 提交按钮 */
 const submitForm = async () => {
+  if (uploading.value) {
+    message.warning('图片正在上传，请稍候再试')
+    return
+  }
   // 提交请求
   formLoading.value = true
   try {
@@ -199,6 +211,10 @@ const submitForm = async () => {
 const close = () => {
   delView(unref(currentRoute))
   push({ name: 'ProductSpu' })
+}
+
+const handleUploadingChange = (status: boolean) => {
+  uploading.value = status
 }
 
 /** 初始化 */

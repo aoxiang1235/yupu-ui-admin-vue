@@ -143,7 +143,7 @@ const props = defineProps({
   drag: propTypes.bool.def(true), // 是否支持拖拽上传 ==> 非必传（默认为 true）
   disabled: propTypes.bool.def(false), // 是否禁用上传组件 ==> 非必传（默认为 false）
   limit: propTypes.number.def(5), // 最大图片上传数 ==> 非必传（默认为 5张）
-  fileSize: propTypes.number.def(5), // 图片大小限制 ==> 非必传（默认为 5M）
+  fileSize: propTypes.number.def(2), // 图片大小限制 ==> 非必传（默认为 5M）
   fileType: propTypes.array.def(['image/jpeg', 'image/png', 'image/gif']), // 图片类型限制 ==> 非必传（默认为 ["image/jpeg", "image/png", "image/gif"]）
   height: propTypes.string.def('150px'), // 组件高度 ==> 非必传（默认为 150px）
   width: propTypes.string.def('150px'), // 组件宽度 ==> 非必传（默认为 150px）
@@ -204,8 +204,14 @@ const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
       message: `上传图片大小不能超过 ${props.fileSize}M！`,
       type: 'warning'
     })
-  uploadNumber.value++
-  return imgType.includes(rawFile.type as FileTypes) && imgSize
+  const isValid = imgType.includes(rawFile.type as FileTypes) && imgSize
+  if (isValid) {
+    if (uploadNumber.value === 0) {
+      emit('uploading-change', true)
+    }
+    uploadNumber.value++
+  }
+  return isValid
 }
 
 // ==================== 事件定义 ====================
@@ -214,6 +220,7 @@ const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
  */
 interface UploadEmits {
   (e: 'update:modelValue', value: string[]): void
+  (e: 'uploading-change', value: boolean): void
 }
 
 const emit = defineEmits<UploadEmits>()
@@ -229,16 +236,39 @@ const emit = defineEmits<UploadEmits>()
  *
  * @param res - 上传接口返回的响应数据，包含文件 URL
  */
-const uploadSuccess: UploadProps['onSuccess'] = async (res: any): Promise<void> => {
+const uploadSuccess: UploadProps['onSuccess'] = async (response, uploadFile): Promise<void> => {
   message.success('上传成功')
-  console.log('[UploadImgs] 上传成功，返回URL:', res.data)
+  const responseData = (response as Record<string, any> | undefined)?.data as string | undefined
+  const fileInfo = uploadFile as UploadFile
+  const urlFromFile =
+    ((fileInfo?.response as Record<string, any> | undefined)?.data as string | undefined) ??
+    fileInfo?.url
+  const newUrl =
+    typeof responseData === 'string' && responseData
+      ? responseData
+      : typeof urlFromFile === 'string'
+        ? urlFromFile
+        : ''
+
+  if (!newUrl) {
+    console.warn('[UploadImgs] 上传成功但未获取到有效的文件地址', response, uploadFile)
+    uploadNumber.value = Math.max(uploadNumber.value - 1, 0)
+    if (uploadNumber.value === 0) {
+      uploadList.value = []
+      emit('uploading-change', false)
+    }
+    return
+  }
+
+  console.log('[UploadImgs] 上传成功，返回URL:', newUrl)
 
   // 删除自身
-  const index = fileList.value.findIndex((item) => item.response?.data === res.data)
+  const index = fileList.value.findIndex(
+    (item) => item.uid && fileInfo?.uid && item.uid === fileInfo.uid
+  )
   fileList.value.splice(index, 1)
 
   // 新上传的文件URL
-  const newUrl = res.data
   uploadList.value.push({ name: newUrl, url: newUrl })
 
   console.log('[UploadImgs] 当前上传进度:', uploadList.value.length, '/', uploadNumber.value)
@@ -246,11 +276,13 @@ const uploadSuccess: UploadProps['onSuccess'] = async (res: any): Promise<void> 
   if (uploadList.value.length == uploadNumber.value) {
     console.log('[UploadImgs] 所有文件上传完成，开始批量处理')
     // 所有文件上传完成，批量处理
-    const newUrls = uploadList.value.map((item) => item.url)
+    const newUrls = uploadList.value
+      .map((item) => item.url)
+      .filter((url): url is string => typeof url === 'string' && url.length > 0)
 
     // 为每个新URL获取签名（如果需要）
     for (const originalUrl of newUrls) {
-      originalUrls.value.push(originalUrl) // 保存原始URL
+      originalUrls.value.push(originalUrl)
 
       let displayUrl = originalUrl
 
@@ -279,6 +311,7 @@ const uploadSuccess: UploadProps['onSuccess'] = async (res: any): Promise<void> 
 
     uploadList.value = []
     uploadNumber.value = 0
+    emit('uploading-change', false)
 
     console.log('[UploadImgs] 更新后的 originalUrls:', originalUrls.value)
     console.log('[UploadImgs] 更新后的 fileList 数量:', fileList.value.length)
@@ -470,6 +503,11 @@ const handleRemove = async (uploadFile: UploadFile) => {
  * 当文件上传失败时触发
  */
 const uploadError = () => {
+  uploadNumber.value = Math.max(uploadNumber.value - 1, 0)
+  if (uploadNumber.value === 0) {
+    uploadList.value = []
+    emit('uploading-change', false)
+  }
   ElNotification({
     title: '温馨提示',
     message: '图片上传失败，请您重新上传！',

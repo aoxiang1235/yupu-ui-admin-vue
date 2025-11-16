@@ -83,7 +83,7 @@ const props = defineProps({
   modelValue: propTypes.string.def(''), // 图片URL（组件内部自动处理：存储原始URL，显示签名URL）
   drag: propTypes.bool.def(true), // 是否支持拖拽上传 ==> 非必传（默认为 true）
   disabled: propTypes.bool.def(false), // 是否禁用上传组件 ==> 非必传（默认为 false）
-  fileSize: propTypes.number.def(5), // 图片大小限制 ==> 非必传（默认为 5M）
+  fileSize: propTypes.number.def(2), // 图片大小限制 ==> 非必传（默认为 5M）
   fileType: propTypes.array.def(['image/jpeg', 'image/png', 'image/gif']), // 图片类型限制 ==> 非必传（默认为 ["image/jpeg", "image/png", "image/gif"]）
   height: propTypes.string.def('150px'), // 组件高度 ==> 非必传（默认为 150px）
   width: propTypes.string.def('150px'), // 组件宽度 ==> 非必传（默认为 150px）
@@ -113,10 +113,10 @@ watch(
       originalUrl.value = ''
       return
     }
-    
+
     // 检查URL是否包含签名参数
     const hasSignature = /[?&](X-Amz-Signature|sign|signature|x-cos-security-token)=/i.test(newUrl)
-    
+
     if (hasSignature) {
       if (props.needSignature) {
         // URL包含签名，且需要分离重新签名
@@ -138,7 +138,7 @@ watch(
     } else {
       // URL不包含签名
       originalUrl.value = newUrl
-      
+
       if (props.needSignature) {
         // 需要签名，先尝试使用缓存
         const cachedSigned = signedUrlCache.get(newUrl)
@@ -176,7 +176,7 @@ const imagePreview = (imgUrl: string) => {
   })
 }
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'uploading-change'])
 
 const deleteImg = async () => {
   // 如果开启了自动删除，并且有图片URL
@@ -191,9 +191,9 @@ const deleteImg = async () => {
       // 即使删除失败，也清空图片URL（因为可能是文件已经不存在）
     }
   }
-  
+
   signedUrlCache.delete(originalUrl.value)
-  
+
   // 清空URL
   emit('update:modelValue', '')
 }
@@ -211,7 +211,11 @@ const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
   if (!imgType.includes(rawFile.type as FileTypes))
     message.notifyWarning('上传图片不符合所需的格式！')
   if (!imgSize) message.notifyWarning(`上传图片大小不能超过 ${props.fileSize}M！`)
-  return imgType.includes(rawFile.type as FileTypes) && imgSize
+  const isValid = imgType.includes(rawFile.type as FileTypes) && imgSize
+  if (isValid) {
+    emit('uploading-change', true)
+  }
+  return isValid
 }
 
 // 图片上传成功提示
@@ -219,11 +223,13 @@ const uploadSuccess: UploadProps['onSuccess'] = (res: any): void => {
   message.success('上传成功')
   // emit 原始URL（后端返回的应该就是原始URL）
   emit('update:modelValue', res.data)
+  emit('uploading-change', false)
   // watch 会自动监听并获取签名URL用于显示
 }
 
 // 图片上传错误提示
 const uploadError = () => {
+  emit('uploading-change', false)
   message.notifyError('图片上传失败，请您重新上传！')
 }
 </script>

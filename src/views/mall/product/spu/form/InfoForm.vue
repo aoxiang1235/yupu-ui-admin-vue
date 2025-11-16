@@ -56,6 +56,8 @@
         :need-signature="!isDetail"
         :auto-delete="!isDetail"
         height="80px"
+        :file-size="2"
+        @uploading-change="handleUploadingChange"
       />
     </el-form-item>
     <el-form-item label="商品轮播图" v-if="isUpdate" prop="sliderPicUrls">
@@ -63,6 +65,8 @@
         v-model="formData.sliderPicUrls"
         :need-signature="true"
         :auto-delete="isUpdate"
+        :file-size="2"
+        @uploading-change="handleUploadingChange"
       />
     </el-form-item>
     <el-form-item v-if="!isUpdate && formData.sliderPicUrls?.length" label="轮播图预览">
@@ -123,6 +127,18 @@ const rules = reactive({
   brandId: [required]
 })
 
+const emit = defineEmits(['update:activeName', 'uploading-change'])
+
+const uploadingTasks = ref(0)
+
+const handleUploadingChange = (status: boolean) => {
+  uploadingTasks.value += status ? 1 : -1
+  if (uploadingTasks.value < 0) {
+    uploadingTasks.value = 0
+  }
+  emit('uploading-change', uploadingTasks.value > 0)
+}
+
 /** 将传进来的值赋值给 formData */
 watch(
   () => props.propFormData,
@@ -175,7 +191,6 @@ watch(
 )
 
 /** 表单校验 */
-const emit = defineEmits(['update:activeName'])
 const validate = async () => {
   if (!formRef) return
   try {
