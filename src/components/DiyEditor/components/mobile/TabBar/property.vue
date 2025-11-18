@@ -50,7 +50,6 @@
                 v-model="element.iconUrl"
                 width="40px"
                 height="40px"
-                :show-delete="false"
                 :show-btn-text="false"
               />
               <el-text size="small">未选中</el-text>
@@ -60,7 +59,6 @@
                 v-model="element.activeIconUrl"
                 width="40px"
                 height="40px"
-                :show-delete="false"
                 :show-btn-text="false"
               />
               <el-text>已选中</el-text>
