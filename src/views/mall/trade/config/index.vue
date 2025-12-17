@@ -1539,6 +1539,22 @@
                   </template>
                 </UploadImg>
               </el-form-item>
+
+              <!-- 保存按钮区域 -->
+              <el-card shadow="never" style="margin: 20px 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none">
+                <div style="display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 16px; padding: 4px 0">
+                  <el-button
+                    :loading="formLoading"
+                    type="primary"
+                    size="default"
+                    style="min-width: 120px; background: white; color: #667eea; border: none; font-weight: 500"
+                    @click="submitForm"
+                  >
+                    <Icon icon="ep:check" class="mr-5px" />
+                    保存配置
+                  </el-button>
+                </div>
+              </el-card>
             </el-tab-pane>
           </el-tabs>
         </el-tab-pane>
@@ -2291,6 +2307,54 @@ const submitForm = async () => {
         sameCityFreeEnabled: formDataValue.sameCityFreeEnabled,
         sameCityFreePrice: sameCityFreePrice,
         sameCityDeliveryRangeDescription: formDataValue.sameCityDeliveryRangeDescription
+      })
+      message.success('保存成功')
+      await getConfig()
+      return
+    }
+    
+    // 如果是门店自配送Tab，使用专门的门店自配送接口
+    if (activeMainTab.value === 'delivery' && activeDeliveryTab.value === 'store') {
+      // 金额需要从元转换为分
+      const storeStartPrice = formDataValue.storeStartPrice != null 
+        ? Math.round(formDataValue.storeStartPrice * 100) 
+        : undefined
+      const storeExtraPrice = formDataValue.storeExtraPrice != null 
+        ? Math.round(formDataValue.storeExtraPrice * 100) 
+        : undefined
+      const storeFixedPrice = formDataValue.storeFixedPrice != null 
+        ? Math.round(formDataValue.storeFixedPrice * 100) 
+        : undefined
+      const storeCustomMinPrice = formDataValue.storeCustomMinPrice != null 
+        ? Math.round(formDataValue.storeCustomMinPrice * 100) 
+        : undefined
+      const storeCustomMaxPrice = formDataValue.storeCustomMaxPrice != null 
+        ? Math.round(formDataValue.storeCustomMaxPrice * 100) 
+        : undefined
+      const storeCustomDefaultPrice = formDataValue.storeCustomDefaultPrice != null 
+        ? Math.round(formDataValue.storeCustomDefaultPrice * 100) 
+        : undefined
+      const storeFreePrice = formDataValue.storeFreePrice != null 
+        ? Math.round(formDataValue.storeFreePrice * 100) 
+        : undefined
+      
+      await ConfigApi.updateStoreConfig({
+        deliveryStoreEnabled: formDataValue.deliveryStoreEnabled ?? false,
+        storeChargeMode: formDataValue.storeChargeMode ?? 1,
+        storeStartDistance: formDataValue.storeStartDistance,
+        storeStartPrice: storeStartPrice,
+        storeExtraDistance: formDataValue.storeExtraDistance,
+        storeExtraPrice: storeExtraPrice,
+        storeMaxDistance: formDataValue.storeMaxDistance,
+        storeFixedPrice: storeFixedPrice,
+        storeCustomPriceEnabled: formDataValue.storeCustomPriceEnabled,
+        storeCustomMinPrice: storeCustomMinPrice,
+        storeCustomMaxPrice: storeCustomMaxPrice,
+        storeCustomNeedAudit: formDataValue.storeCustomNeedAudit,
+        storeCustomDefaultPrice: storeCustomDefaultPrice,
+        storeFreeEnabled: formDataValue.storeFreeEnabled,
+        storeFreePrice: storeFreePrice,
+        storeDeliveryRangeImageUrl: formDataValue.storeDeliveryRangeImageUrl
       })
       message.success('保存成功')
       await getConfig()

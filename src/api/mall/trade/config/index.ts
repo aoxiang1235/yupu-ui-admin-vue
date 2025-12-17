@@ -114,3 +114,25 @@ export const updateSameCityConfig = async (data: {
 }) => {
   return await request.put({ url: `/trade/config/update-samecity`, data })
 }
+
+// 更新门店自配送配置（仅更新门店自配送字段）
+export const updateStoreConfig = async (data: {
+  deliveryStoreEnabled: boolean
+  storeChargeMode: number
+  storeStartDistance?: number
+  storeStartPrice?: number
+  storeExtraDistance?: number
+  storeExtraPrice?: number
+  storeMaxDistance?: number
+  storeFixedPrice?: number
+  storeCustomPriceEnabled?: boolean
+  storeCustomMinPrice?: number
+  storeCustomMaxPrice?: number
+  storeCustomNeedAudit?: boolean
+  storeCustomDefaultPrice?: number
+  storeFreeEnabled?: boolean
+  storeFreePrice?: number
+  storeDeliveryRangeImageUrl?: string
+}) => {
+  return await request.put({ url: `/trade/config/update-store`, data })
+}
