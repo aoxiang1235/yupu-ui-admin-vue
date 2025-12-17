@@ -13,9 +13,9 @@
       <el-form-item v-show="false" label="hideId">
         <el-input v-model="formData.id" />
       </el-form-item>
-      <el-tabs>
+      <el-tabs v-model="activeMainTab">
         <!-- 售后 -->
-        <el-tab-pane label="售后">
+        <el-tab-pane label="售后" name="afterSale">
           <el-form-item label="退款理由" prop="afterSaleRefundReasons">
             <el-select
               v-model="formData.afterSaleRefundReasons"
@@ -50,48 +50,388 @@
           </el-form-item>
         </el-tab-pane>
         <!-- 配送 -->
-        <el-tab-pane label="配送">
-          <el-tabs type="border-card">
+        <el-tab-pane label="配送" name="delivery">
+          <el-tabs type="border-card" v-model="activeDeliveryTab">
             <!-- Tab 1: 快递发货 -->
-            <el-tab-pane label="快递发货">
-              <!-- 启用开关 -->
-              <el-form-item label="启用快递发货" prop="deliveryExpressEnabled">
-                <el-switch v-model="formData.deliveryExpressEnabled" style="user-select: none" />
-                <el-text class="ml-10px" size="small" type="info">
-                  开启后，用户可以在APP端选择快递发货
-                </el-text>
-              </el-form-item>
+            <el-tab-pane label="快递发货" name="express">
+              <!-- 基础配置卡片 -->
+              <el-card shadow="never" style="margin-bottom: 20px; border: 1px solid #e4e7ed">
+                <template #header>
+                  <div style="display: flex; align-items: center">
+                    <Icon icon="ep:setting" style="font-size: 18px; margin-right: 8px; color: #409eff" />
+                    <span style="font-size: 16px; font-weight: 600">基础配置</span>
+                  </div>
+                </template>
+                
+                <!-- 启用开关 -->
+                <el-form-item label="启用快递发货" prop="deliveryExpressEnabled" style="margin-bottom: 20px">
+                  <el-switch v-model="formData.deliveryExpressEnabled" style="user-select: none" />
+                  <el-text class="ml-10px" size="small" type="info">
+                    开启后，用户可以在APP端选择快递发货
+                  </el-text>
+                </el-form-item>
 
-              <!-- 全局包邮配置 -->
-              <el-divider content-position="left">全局包邮配置</el-divider>
-              <el-form-item label="启用包邮" prop="deliveryExpressFreeEnabled">
-                <el-switch
-                  v-model="formData.deliveryExpressFreeEnabled"
-                  style="user-select: none"
-                />
-                <el-text class="ml-10px" size="small" type="info"> 商城是否启用全场包邮</el-text>
-              </el-form-item>
-              <el-form-item
-                v-if="formData.deliveryExpressFreeEnabled"
-                label="满额包邮"
-                prop="deliveryExpressFreePrice"
-              >
-                <el-input-number
-                  v-model="formData.deliveryExpressFreePrice"
-                  :min="0"
-                  :precision="2"
-                  class="!w-xs"
-                  placeholder="请输入满额包邮"
-                />
-                <el-text class="ml-10px" size="small" type="info">
-                  商城商品满多少金额即可包邮，单位：元
-                </el-text>
-              </el-form-item>
+                <!-- 全局包邮配置 -->
+                <el-divider content-position="left" style="margin: 20px 0">
+                  <span style="font-size: 14px; font-weight: 500; color: #606266">全局包邮配置</span>
+                </el-divider>
+                
+                <el-form-item label="启用包邮" prop="deliveryExpressFreeEnabled" style="margin-bottom: 16px">
+                  <el-switch
+                    v-model="formData.deliveryExpressFreeEnabled"
+                    style="user-select: none"
+                  />
+                  <el-text class="ml-10px" size="small" type="info"> 商城是否启用全场包邮</el-text>
+                </el-form-item>
+                
+                <el-form-item
+                  v-if="formData.deliveryExpressFreeEnabled"
+                  label="满额包邮"
+                  prop="deliveryExpressFreePrice"
+                  style="margin-bottom: 0"
+                >
+                  <div style="display: flex; align-items: center; gap: 12px">
+                    <el-input-number
+                      v-model="formData.deliveryExpressFreePrice"
+                      :min="0"
+                      :precision="2"
+                      class="!w-200px"
+                      placeholder="请输入满额包邮"
+                    />
+                    <el-text size="small" type="info">
+                      商城商品满多少金额即可包邮，单位：元
+                    </el-text>
+                  </div>
+                </el-form-item>
+              </el-card>
+              <!-- 保存按钮区域 -->
+              <el-card shadow="never" style="margin-bottom: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding: 4px 0">
+                  <div style="flex: 1; min-width: 200px; color: white">
+                  </div>
+                  <div style="flex-shrink: 0">
+                    <el-button
+                      :loading="formLoading"
+                      type="primary"
+                      size="default"
+                      style="min-width: 120px; background: white; color: #667eea; border: none; font-weight: 500"
+                      @click="submitForm"
+                    >
+                      <Icon icon="ep:check" class="mr-5px" />
+                      保存基础配置
+                    </el-button>
+                  </div>
+                </div>
+              </el-card>
 
-              <!-- 运费模板管理 -->
-              <el-divider content-position="left">运费模板管理</el-divider>
-              <el-form :inline="true" class="mb-15px">
-                <el-form-item label="模板名称">
+              <!-- 运费模板管理卡片 -->
+              <el-card shadow="never" style="margin-bottom: 20px; border: 1px solid #e4e7ed">
+                <template #header>
+                  <div style="display: flex; align-items: center; justify-content: space-between">
+                    <div style="display: flex; align-items: center">
+                      <Icon icon="ep:document" style="font-size: 18px; margin-right: 8px; color: #409eff" />
+                      <span style="font-size: 16px; font-weight: 600">运费模板管理</span>
+                    </div>
+                    <el-button
+                      type="primary"
+                      size="small"
+                      @click="openExpressTemplateForm('create')"
+                      v-hasPermi="['trade:delivery:express-template:create']"
+                    >
+                      <Icon icon="ep:plus" class="mr-5px" /> 新增模板
+                    </el-button>
+                  </div>
+                </template>
+
+                <!-- 运费模板计费方式说明 -->
+                <el-collapse class="mb-20px">
+                  <el-collapse-item name="expressChargeModeDescription">
+                    <template #title>
+                      <div style="display: flex; align-items: center">
+                        <Icon
+                          icon="ep:question-filled"
+                          style="font-size: 16px; margin-right: 8px; color: #909399"
+                        />
+                        <span style="font-size: 14px; font-weight: 500">运费模板计费方式说明</span>
+                      </div>
+                    </template>
+
+                  <el-card shadow="never" class="mb-0" style="border: 1px solid #e4e7ed">
+                    <el-tabs type="border-card">
+                      <!-- Tab 1: 按件计费 -->
+                      <el-tab-pane label="按件计费">
+                        <div style="padding: 16px">
+                          <el-alert type="info" :closable="false" show-icon class="mb-15px">
+                            <template #default>
+                              <div>
+                                <p class="mb-5px"
+                                  ><strong>适用场景：</strong>商品数量明确，按件数计算运费</p
+                                >
+                                <p class="mb-0"><strong>示例：</strong>服装、日用品、小件商品等</p>
+                              </div>
+                            </template>
+                          </el-alert>
+
+                          <el-descriptions :column="1" border class="mb-15px">
+                            <el-descriptions-item label="计算公式">
+                              <div
+                                style="
+                                  font-family: 'Courier New', monospace;
+                                  font-size: 13px;
+                                  line-height: 1.8;
+                                "
+                              >
+                                <div>总件数 = Σ(商品数量)</div>
+                                <div>if (总件数 &lt;= 首件数) {</div>
+                                <div style="margin-left: 20px">运费 = 首件价格</div>
+                                <div>} else {</div>
+                                <div style="margin-left: 20px">
+                                  续件次数 = ⌈(总件数 - 首件数) / 续件数⌉
+                                </div>
+                                <div style="margin-left: 20px">
+                                  运费 = 首件价格 + (续件价格 × 续件次数)
+                                </div>
+                                <div>}</div>
+                              </div>
+                            </el-descriptions-item>
+                            <el-descriptions-item label="配置字段说明">
+                              <div style="font-size: 12px; line-height: 1.8">
+                                <div><strong>首件数：</strong>按首件价格计算的商品件数范围</div>
+                                <div><strong>首件价格：</strong>首件数范围内的固定运费</div>
+                                <div><strong>续件数：</strong>超过首件后，每多少件加收一次续费</div>
+                                <div><strong>续件价格：</strong>每增加一个续件单位收取的费用</div>
+                              </div>
+                            </el-descriptions-item>
+                          </el-descriptions>
+
+                          <el-card shadow="never" style="background: #f8f9fa">
+                            <template #header>
+                              <span style="font-size: 14px; font-weight: 600">计算示例</span>
+                            </template>
+                            <div style="font-size: 13px; line-height: 1.8">
+                              <div class="mb-10px">
+                                <strong>配置：</strong>
+                                <ul style="margin: 8px 0; padding-left: 20px">
+                                  <li>首件：10件内，运费10元</li>
+                                  <li>续件：每5件，加收5元</li>
+                                </ul>
+                              </div>
+                              <div>
+                                <strong>场景1：</strong>购买8件商品
+                                <div style="margin-left: 20px; color: #67c23a">
+                                  → 总件数8件 &lt;= 首件10件，运费 = 10元
+                                </div>
+                              </div>
+                              <div class="mt-10px">
+                                <strong>场景2：</strong>购买12件商品
+                                <div style="margin-left: 20px; color: #409eff">
+                                  → 总件数12件 > 首件10件<br />
+                                  → 续件次数 = ⌈(12-10)/5⌉ = ⌈0.4⌉ = 1次<br />
+                                  → 运费 = 10 + (5 × 1) = 15元
+                                </div>
+                              </div>
+                              <div class="mt-10px">
+                                <strong>场景3：</strong>购买18件商品
+                                <div style="margin-left: 20px; color: #e6a23c">
+                                  → 总件数18件 > 首件10件<br />
+                                  → 续件次数 = ⌈(18-10)/5⌉ = ⌈1.6⌉ = 2次<br />
+                                  → 运费 = 10 + (5 × 2) = 20元
+                                </div>
+                              </div>
+                            </div>
+                          </el-card>
+                        </div>
+                      </el-tab-pane>
+
+                      <!-- Tab 2: 按重量计费 -->
+                      <el-tab-pane label="按重量计费">
+                        <div style="padding: 16px">
+                          <el-alert type="info" :closable="false" show-icon class="mb-15px">
+                            <template #default>
+                              <div>
+                                <p class="mb-5px"
+                                  ><strong>适用场景：</strong>商品重量差异大，按重量计算运费</p
+                                >
+                                <p class="mb-0"><strong>示例：</strong>生鲜、大件商品、重物等</p>
+                              </div>
+                            </template>
+                          </el-alert>
+
+                          <el-descriptions :column="1" border class="mb-15px">
+                            <el-descriptions-item label="计算公式">
+                              <div
+                                style="
+                                  font-family: 'Courier New', monospace;
+                                  font-size: 13px;
+                                  line-height: 1.8;
+                                "
+                              >
+                                <div>总重量 = Σ(商品重量 × 商品数量)</div>
+                                <div>if (总重量 &lt;= 首件重量) {</div>
+                                <div style="margin-left: 20px">运费 = 首件价格</div>
+                                <div>} else {</div>
+                                <div style="margin-left: 20px">
+                                  续件次数 = ⌈(总重量 - 首件重量) / 续件重量⌉
+                                </div>
+                                <div style="margin-left: 20px">
+                                  运费 = 首件价格 + (续件价格 × 续件次数)
+                                </div>
+                                <div>}</div>
+                              </div>
+                            </el-descriptions-item>
+                            <el-descriptions-item label="配置字段说明">
+                              <div style="font-size: 12px; line-height: 1.8">
+                                <div
+                                  ><strong>首件重量：</strong
+                                  >按首件价格计算的重量范围（单位：kg）</div
+                                >
+                                <div><strong>首件价格：</strong>首件重量范围内的固定运费</div>
+                                <div
+                                  ><strong>续件重量：</strong>超过首件后，每多少kg加收一次续费</div
+                                >
+                                <div><strong>续件价格：</strong>每增加一个续件单位收取的费用</div>
+                              </div>
+                            </el-descriptions-item>
+                          </el-descriptions>
+
+                          <el-card shadow="never" style="background: #f8f9fa">
+                            <template #header>
+                              <span style="font-size: 14px; font-weight: 600">计算示例</span>
+                            </template>
+                            <div style="font-size: 13px; line-height: 1.8">
+                              <div class="mb-10px">
+                                <strong>配置：</strong>
+                                <ul style="margin: 8px 0; padding-left: 20px">
+                                  <li>首件：3kg内，运费10元</li>
+                                  <li>续件：每1kg，加收3元</li>
+                                </ul>
+                              </div>
+                              <div>
+                                <strong>场景1：</strong>购买2件商品，每件1kg（总重量2kg）
+                                <div style="margin-left: 20px; color: #67c23a">
+                                  → 总重量2kg &lt;= 首件3kg，运费 = 10元
+                                </div>
+                              </div>
+                              <div class="mt-10px">
+                                <strong>场景2：</strong>购买3件商品，每件1.5kg（总重量4.5kg）
+                                <div style="margin-left: 20px; color: #409eff">
+                                  → 总重量4.5kg > 首件3kg<br />
+                                  → 续件次数 = ⌈(4.5-3)/1⌉ = ⌈1.5⌉ = 2次<br />
+                                  → 运费 = 10 + (3 × 2) = 16元
+                                </div>
+                              </div>
+                              <div class="mt-10px">
+                                <strong>场景3：</strong>购买1件商品，重量5kg
+                                <div style="margin-left: 20px; color: #e6a23c">
+                                  → 总重量5kg > 首件3kg<br />
+                                  → 续件次数 = ⌈(5-3)/1⌉ = ⌈2⌉ = 2次<br />
+                                  → 运费 = 10 + (3 × 2) = 16元
+                                </div>
+                              </div>
+                            </div>
+                          </el-card>
+                        </div>
+                      </el-tab-pane>
+
+                      <!-- Tab 3: 按体积计费 -->
+                      <el-tab-pane label="按体积计费">
+                        <div style="padding: 16px">
+                          <el-alert type="info" :closable="false" show-icon class="mb-15px">
+                            <template #default>
+                              <div>
+                                <p class="mb-5px"
+                                  ><strong>适用场景：</strong>商品体积大但重量轻，按体积计算运费</p
+                                >
+                                <p class="mb-0"
+                                  ><strong>示例：</strong>家具、家电、大件包装商品等</p
+                                >
+                              </div>
+                            </template>
+                          </el-alert>
+
+                          <el-descriptions :column="1" border class="mb-15px">
+                            <el-descriptions-item label="计算公式">
+                              <div
+                                style="
+                                  font-family: 'Courier New', monospace;
+                                  font-size: 13px;
+                                  line-height: 1.8;
+                                "
+                              >
+                                <div>总体积 = Σ(商品体积 × 商品数量)</div>
+                                <div>if (总体积 &lt;= 首件体积) {</div>
+                                <div style="margin-left: 20px">运费 = 首件价格</div>
+                                <div>} else {</div>
+                                <div style="margin-left: 20px">
+                                  续件次数 = ⌈(总体积 - 首件体积) / 续件体积⌉
+                                </div>
+                                <div style="margin-left: 20px">
+                                  运费 = 首件价格 + (续件价格 × 续件次数)
+                                </div>
+                                <div>}</div>
+                              </div>
+                            </el-descriptions-item>
+                            <el-descriptions-item label="配置字段说明">
+                              <div style="font-size: 12px; line-height: 1.8">
+                                <div
+                                  ><strong>首件体积：</strong
+                                  >按首件价格计算的体积范围（单位：m³）</div
+                                >
+                                <div><strong>首件价格：</strong>首件体积范围内的固定运费</div>
+                                <div
+                                  ><strong>续件体积：</strong>超过首件后，每多少m³加收一次续费</div
+                                >
+                                <div><strong>续件价格：</strong>每增加一个续件单位收取的费用</div>
+                              </div>
+                            </el-descriptions-item>
+                          </el-descriptions>
+
+                          <el-card shadow="never" style="background: #f8f9fa">
+                            <template #header>
+                              <span style="font-size: 14px; font-weight: 600">计算示例</span>
+                            </template>
+                            <div style="font-size: 13px; line-height: 1.8">
+                              <div class="mb-10px">
+                                <strong>配置：</strong>
+                                <ul style="margin: 8px 0; padding-left: 20px">
+                                  <li>首件：0.5m³内，运费20元</li>
+                                  <li>续件：每0.3m³，加收10元</li>
+                                </ul>
+                              </div>
+                              <div>
+                                <strong>场景1：</strong>购买1件商品，体积0.4m³
+                                <div style="margin-left: 20px; color: #67c23a">
+                                  → 总体积0.4m³ &lt;= 首件0.5m³，运费 = 20元
+                                </div>
+                              </div>
+                              <div class="mt-10px">
+                                <strong>场景2：</strong>购买1件商品，体积0.8m³
+                                <div style="margin-left: 20px; color: #409eff">
+                                  → 总体积0.8m³ > 首件0.5m³<br />
+                                  → 续件次数 = ⌈(0.8-0.5)/0.3⌉ = ⌈1⌉ = 1次<br />
+                                  → 运费 = 20 + (10 × 1) = 30元
+                                </div>
+                              </div>
+                              <div class="mt-10px">
+                                <strong>场景3：</strong>购买2件商品，每件0.4m³（总体积0.8m³）
+                                <div style="margin-left: 20px; color: #e6a23c">
+                                  → 总体积0.8m³ > 首件0.5m³<br />
+                                  → 续件次数 = ⌈(0.8-0.5)/0.3⌉ = ⌈1⌉ = 1次<br />
+                                  → 运费 = 20 + (10 × 1) = 30元
+                                </div>
+                              </div>
+                            </div>
+                          </el-card>
+                        </div>
+                      </el-tab-pane>
+                    </el-tabs>
+                  </el-card>
+                </el-collapse-item>
+              </el-collapse>
+
+              <!-- 搜索区域 -->
+              <el-form :inline="true" class="mb-15px" style="background: #f8f9fa; padding: 16px; border-radius: 4px">
+                <el-form-item label="模板名称" style="margin-bottom: 0">
                   <el-input
                     v-model="expressTemplateQuery.name"
                     placeholder="请输入模板名称"
@@ -100,24 +440,22 @@
                     @keyup.enter="handleExpressTemplateQuery"
                   />
                 </el-form-item>
-                <el-form-item>
+                <el-form-item style="margin-bottom: 0">
                   <el-button @click="handleExpressTemplateQuery">
                     <Icon icon="ep:search" class="mr-5px" /> 搜索
                   </el-button>
                   <el-button @click="resetExpressTemplateQuery">
                     <Icon icon="ep:refresh" class="mr-5px" /> 重置
                   </el-button>
-                  <el-button
-                    type="primary"
-                    @click="openExpressTemplateForm('create')"
-                    v-hasPermi="['trade:delivery:express-template:create']"
-                  >
-                    <Icon icon="ep:plus" class="mr-5px" /> 新增模板
-                  </el-button>
                 </el-form-item>
               </el-form>
 
-              <el-table v-loading="expressTemplateLoading" :data="expressTemplateList">
+              <!-- 运费模板列表 -->
+              <el-table 
+                v-loading="expressTemplateLoading" 
+                :data="expressTemplateList"
+                stripe
+              >
                 <el-table-column label="编号" prop="id" width="80" />
                 <el-table-column label="模板名称" prop="name" min-width="150" />
                 <el-table-column label="计费方式" prop="chargeMode" width="120">
@@ -153,37 +491,49 @@
                   </template>
                 </el-table-column>
               </el-table>
+              </el-card>
+              <!-- 快递公司管理卡片 -->
+              <el-card shadow="never" style="margin-bottom: 20px; border: 1px solid #e4e7ed">
+                <template #header>
+                  <div style="display: flex; align-items: center; justify-content: space-between">
+                    <div style="display: flex; align-items: center">
+                      <Icon icon="ep:truck" style="font-size: 18px; margin-right: 8px; color: #409eff" />
+                      <span style="font-size: 16px; font-weight: 600">快递公司管理</span>
+                    </div>
+                    <el-button
+                      type="primary"
+                      size="small"
+                      @click="openExpressForm('create')"
+                      v-hasPermi="['trade:delivery:express:create']"
+                    >
+                      <Icon icon="ep:plus" class="mr-5px" /> 新增快递公司
+                    </el-button>
+                  </div>
+                </template>
 
-              <!-- 快递公司管理 -->
-              <el-divider content-position="left">快递公司管理</el-divider>
-              <el-form :inline="true" class="mb-15px">
-                <el-form-item label="快递公司名称">
-                  <el-input
-                    v-model="expressQuery.name"
-                    placeholder="请输入快递公司名称"
-                    clearable
-                    class="!w-240px"
-                    @keyup.enter="handleExpressQuery"
-                  />
-                </el-form-item>
-                <el-form-item>
-                  <el-button @click="handleExpressQuery">
-                    <Icon icon="ep:search" class="mr-5px" /> 搜索
-                  </el-button>
-                  <el-button @click="resetExpressQuery">
-                    <Icon icon="ep:refresh" class="mr-5px" /> 重置
-                  </el-button>
-                  <el-button
-                    type="primary"
-                    @click="openExpressForm('create')"
-                    v-hasPermi="['trade:delivery:express:create']"
-                  >
-                    <Icon icon="ep:plus" class="mr-5px" /> 新增快递公司
-                  </el-button>
-                </el-form-item>
-              </el-form>
+                <!-- 搜索区域 -->
+                <el-form :inline="true" class="mb-15px" style="background: #f8f9fa; padding: 16px; border-radius: 4px">
+                  <el-form-item label="快递公司名称" style="margin-bottom: 0">
+                    <el-input
+                      v-model="expressQuery.name"
+                      placeholder="请输入快递公司名称"
+                      clearable
+                      class="!w-240px"
+                      @keyup.enter="handleExpressQuery"
+                    />
+                  </el-form-item>
+                  <el-form-item style="margin-bottom: 0">
+                    <el-button @click="handleExpressQuery">
+                      <Icon icon="ep:search" class="mr-5px" /> 搜索
+                    </el-button>
+                    <el-button @click="resetExpressQuery">
+                      <Icon icon="ep:refresh" class="mr-5px" /> 重置
+                    </el-button>
+                  </el-form-item>
+                </el-form>
 
-              <el-table v-loading="expressLoading" :data="expressList">
+                <!-- 快递公司列表 -->
+                <el-table v-loading="expressLoading" :data="expressList" stripe>
                 <el-table-column label="编号" prop="id" width="80" />
                 <el-table-column label="快递公司编号" prop="code" width="120" />
                 <el-table-column label="快递公司名称" prop="name" min-width="150" />
@@ -224,20 +574,59 @@
                   </template>
                 </el-table-column>
               </el-table>
+              </el-card>
             </el-tab-pane>
 
             <!-- Tab 2: 门店自提 -->
-            <el-tab-pane label="门店自提">
-              <!-- 启用开关 -->
-              <el-form-item label="启用门店自提" prop="deliveryPickUpEnabled">
-                <el-switch v-model="formData.deliveryPickUpEnabled" style="user-select: none" />
-                <el-text class="ml-10px" size="small" type="info">
-                  开启后，用户可以在APP端选择门店自提
-                </el-text>
-              </el-form-item>
+            <el-tab-pane label="门店自提" name="pickUp">
+              <!-- 基础配置卡片 -->
+              <el-card shadow="never" style="margin-bottom: 20px; border: 1px solid #e4e7ed">
+                <template #header>
+                  <div style="display: flex; align-items: center">
+                    <Icon icon="ep:setting" style="font-size: 18px; margin-right: 8px; color: #409eff" />
+                    <span style="font-size: 16px; font-weight: 600">基础配置</span>
+                  </div>
+                </template>
+                
+                <!-- 启用开关 -->
+                <el-form-item label="启用门店自提" prop="deliveryPickUpEnabled" style="margin-bottom: 0">
+                  <el-switch v-model="formData.deliveryPickUpEnabled" style="user-select: none" />
+                  <el-text class="ml-10px" size="small" type="info">
+                    开启后，用户可以在APP端选择门店自提
+                  </el-text>
+                </el-form-item>
+              </el-card>
+
+              <!-- 保存按钮区域 -->
+              <el-card shadow="never" style="margin-bottom: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding: 4px 0">
+                  <div style="flex: 1; min-width: 200px; color: white">
+                  </div>
+                  <div style="flex-shrink: 0">
+                    <el-button
+                      :loading="formLoading"
+                      type="primary"
+                      size="default"
+                      style="min-width: 120px; background: white; color: #667eea; border: none; font-weight: 500"
+                      @click="submitForm"
+                    >
+                      <Icon icon="ep:check" class="mr-5px" />
+                      保存配置
+                    </el-button>
+                  </div>
+                </div>
+              </el-card>
 
               <!-- 门店管理 -->
-              <el-divider content-position="left">门店管理</el-divider>
+              <el-card shadow="never" style="margin-bottom: 20px; border: 1px solid #e4e7ed">
+                <template #header>
+                  <div style="display: flex; align-items: center">
+                    <Icon icon="ep:shop" style="font-size: 18px; margin-right: 8px; color: #409eff" />
+                    <span style="font-size: 16px; font-weight: 600">门店管理</span>
+                  </div>
+                </template>
+                
+                <el-divider content-position="left" style="margin: 0 0 16px 0">门店列表</el-divider>
               <el-form :inline="true" class="mb-15px">
                 <el-form-item label="门店名称">
                   <el-input
@@ -309,17 +698,44 @@
                   </template>
                 </el-table-column>
               </el-table>
+              </el-card>
             </el-tab-pane>
 
             <!-- Tab 3: 同城配送 -->
-            <el-tab-pane label="同城配送">
+            <el-tab-pane label="同城配送" name="sameCity">
               <!-- 启用开关 -->
               <el-form-item label="启用同城配送" prop="deliverySameCityEnabled">
                 <el-switch v-model="formData.deliverySameCityEnabled" style="user-select: none" />
                 <el-text class="ml-10px" size="small" type="info">
-                  开启后，用户可以在APP端选择同城配送（功能开发中）
+                  开启后，用户可以在APP端选择同城配送
                 </el-text>
               </el-form-item>
+
+              <!-- 同城配送包邮配置（提前展示） -->
+              <el-divider content-position="left">同城配送包邮配置</el-divider>
+              <el-form-item label="启用包邮" prop="sameCityFreeEnabled">
+                <el-switch v-model="formData.sameCityFreeEnabled" style="user-select: none" />
+                <el-text class="ml-10px" size="small" type="info">
+                  开启后，满足条件可免同城配送费
+                </el-text>
+              </el-form-item>
+              <el-form-item
+                v-if="formData.sameCityFreeEnabled"
+                label="满额包邮"
+                prop="sameCityFreePrice"
+              >
+                <el-input-number
+                  v-model="formData.sameCityFreePrice"
+                  :min="0"
+                  :precision="2"
+                  class="!w-xs"
+                  placeholder="满额包邮"
+                />
+                <el-text class="ml-10px" size="small" type="info">
+                  订单金额满多少元可免同城配送费，单位：元
+                </el-text>
+              </el-form-item>
+
               <!-- 同城配送收费配置 -->
               <el-divider content-position="left">同城配送收费配置</el-divider>
               <el-form-item label="计费方式" prop="sameCityChargeMode">
@@ -672,277 +1088,77 @@
                 </el-alert>
               </template>
 
-              <!-- 同城配送包邮配置 -->
-              <el-divider content-position="left">同城配送包邮配置</el-divider>
-              <el-form-item label="启用包邮" prop="sameCityFreeEnabled">
-                <el-switch v-model="formData.sameCityFreeEnabled" style="user-select: none" />
-                <el-text class="ml-10px" size="small" type="info">
-                  开启后，满足条件可免同城配送费
+              <!-- 配送范围管理 -->
+              <el-divider content-position="left">配送范围管理</el-divider>
+              <el-alert type="info" :closable="false" show-icon class="mb-15px">
+                <template #default>
+                  <div>
+                    <p class="mb-5px"><strong>功能说明：</strong></p>
+                    <p class="mb-0">
+                      设置配送范围的文字描述，该说明将展示给用户，帮助用户了解同城配送的服务范围
+                    </p>
+                  </div>
+                </template>
+              </el-alert>
+              <el-form-item label="配送范围限制说明" prop="sameCityDeliveryRangeDescription">
+                <el-input
+                  v-model="formData.sameCityDeliveryRangeDescription"
+                  type="textarea"
+                  :rows="4"
+                  placeholder="请输入配送范围限制说明，例如：配送范围覆盖XX区域内，配送距离不超过XX公里，超过此范围暂不支持同城配送"
+                  maxlength="500"
+                  show-word-limit
+                />
+                <el-text class="mt-5px block" size="small" type="info">
+                  该说明将显示在用户下单页面，帮助用户了解配送范围限制，建议包含配送区域、距离限制等信息
                 </el-text>
               </el-form-item>
-              <el-form-item
-                v-if="formData.sameCityFreeEnabled"
-                label="满额包邮"
-                prop="sameCityFreePrice"
-              >
+
+              <!-- 保存按钮区域 -->
+              <el-card shadow="never" style="margin-bottom: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none">
+                <div style="display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 16px; padding: 4px 0">
+                  <el-button
+                    :loading="formLoading"
+                    type="primary"
+                    size="default"
+                    style="min-width: 120px; background: white; color: #667eea; border: none; font-weight: 500"
+                    @click="submitForm"
+                  >
+                    <Icon icon="ep:check" class="mr-5px" />
+                    保存配置
+                  </el-button>
+                </div>
+              </el-card>
+            </el-tab-pane>
+
+            <!-- Tab 4: 门店自配送 -->
+            <el-tab-pane label="门店自配送" name="store">
+              <!-- 启用开关 -->
+              <el-form-item label="启用门店自配送" prop="deliveryStoreEnabled">
+                <el-switch v-model="formData.deliveryStoreEnabled" style="user-select: none" />
+                <el-text class="ml-10px" size="small" type="info">
+                  开启后，用户可以在APP端选择门店自配送
+                </el-text>
+              </el-form-item>
+
+              <!-- 门店自配送包邮配置（提前展示） -->
+              <el-divider content-position="left">门店自配送包邮配置</el-divider>
+              <el-form-item label="启用包邮" prop="storeFreeEnabled">
+                <el-switch v-model="formData.storeFreeEnabled" style="user-select: none" />
+                <el-text class="ml-10px" size="small" type="info">
+                  开启后，满足条件可免门店自配送费
+                </el-text>
+              </el-form-item>
+              <el-form-item v-if="formData.storeFreeEnabled" label="满额包邮" prop="storeFreePrice">
                 <el-input-number
-                  v-model="formData.sameCityFreePrice"
+                  v-model="formData.storeFreePrice"
                   :min="0"
                   :precision="2"
                   class="!w-xs"
                   placeholder="满额包邮"
                 />
                 <el-text class="ml-10px" size="small" type="info">
-                  订单金额满多少元可免同城配送费，单位：元
-                </el-text>
-              </el-form-item>
-
-              <!-- 配送范围管理 -->
-              <el-divider content-position="left">配送范围管理</el-divider>
-
-              <el-card shadow="never" class="mb-20px" style="border: 1px solid #e4e7ed">
-                <template #header>
-                  <div style="display: flex; align-items: center; justify-content: space-between">
-                    <div style="display: flex; align-items: center">
-                      <Icon
-                        icon="ep:location"
-                        style="font-size: 20px; margin-right: 8px; color: #409eff"
-                      />
-                      <span style="font-size: 16px; font-weight: 600">配送中心位置</span>
-                    </div>
-                    <el-button type="primary" @click="openMapPicker">
-                      <Icon icon="ep:map-location" class="mr-5px" /> 地图选择位置
-                    </el-button>
-                  </div>
-                </template>
-
-                <el-row :gutter="20">
-                  <el-col :span="12">
-                    <el-form-item label="配送中心纬度" prop="sameCityDeliveryCenterLatitude">
-                      <el-input-number
-                        v-model="formData.sameCityDeliveryCenterLatitude"
-                        :min="-90"
-                        :max="90"
-                        :precision="6"
-                        class="!w-full"
-                        placeholder="请选择或输入纬度"
-                        :controls="false"
-                      />
-                      <el-text class="mt-5px block" size="small" type="info">
-                        纬度范围：-90 ~ 90
-                      </el-text>
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="12">
-                    <el-form-item label="配送中心经度" prop="sameCityDeliveryCenterLongitude">
-                      <el-input-number
-                        v-model="formData.sameCityDeliveryCenterLongitude"
-                        :min="-180"
-                        :max="180"
-                        :precision="6"
-                        class="!w-full"
-                        placeholder="请选择或输入经度"
-                        :controls="false"
-                      />
-                      <el-text class="mt-5px block" size="small" type="info">
-                        经度范围：-180 ~ 180
-                      </el-text>
-                    </el-form-item>
-                  </el-col>
-                </el-row>
-
-                <el-form-item v-if="sameCityDeliveryCenterAddress" label="选中地址">
-                  <el-text type="success" style="font-size: 14px">
-                    {{ sameCityDeliveryCenterAddress }}
-                  </el-text>
-                </el-form-item>
-              </el-card>
-
-              <el-card shadow="never" class="mb-20px" style="border: 1px solid #e4e7ed">
-                <template #header>
-                  <div style="display: flex; align-items: center">
-                    <Icon
-                      icon="ep:aim"
-                      style="font-size: 20px; margin-right: 8px; color: #67c23a"
-                    />
-                    <span style="font-size: 16px; font-weight: 600">配送范围设置</span>
-                  </div>
-                </template>
-
-                <el-form-item label="配送范围半径" prop="sameCityDeliveryRange">
-                  <div style="display: flex; align-items: center; gap: 12px">
-                    <el-input-number
-                      v-model="formData.sameCityDeliveryRange"
-                      :min="0"
-                      :max="100"
-                      :precision="1"
-                      :step="1"
-                      class="!w-200px"
-                      placeholder="配送范围半径"
-                    />
-                    <el-text size="small" type="info">公里</el-text>
-                    <el-text size="small" type="info" style="flex: 1">
-                      以配送中心为圆心，支持配送的半径范围
-                    </el-text>
-                  </div>
-                </el-form-item>
-
-                <!-- 配置预览 -->
-                <div
-                  v-if="
-                    formData.sameCityDeliveryCenterLatitude &&
-                    formData.sameCityDeliveryCenterLongitude &&
-                    formData.sameCityDeliveryRange
-                  "
-                  style="
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    border-radius: 8px;
-                    padding: 20px;
-                    color: white;
-                    margin-top: 16px;
-                  "
-                >
-                  <div style="display: flex; align-items: center; margin-bottom: 12px">
-                    <Icon icon="ep:view" style="font-size: 18px; margin-right: 8px; color: white" />
-                    <span style="font-size: 15px; font-weight: 600">配置预览</span>
-                  </div>
-                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px">
-                    <div>
-                      <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px">
-                        配送中心坐标
-                      </div>
-                      <div style="font-size: 14px; font-weight: 500">
-                        {{ formData.sameCityDeliveryCenterLatitude }},
-                        {{ formData.sameCityDeliveryCenterLongitude }}
-                      </div>
-                    </div>
-                    <div>
-                      <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px">
-                        配送范围半径
-                      </div>
-                      <div style="font-size: 14px; font-weight: 500">
-                        {{ formData.sameCityDeliveryRange }} 公里
-                      </div>
-                    </div>
-                    <div style="grid-column: 1 / -1">
-                      <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px">
-                        配送覆盖范围
-                      </div>
-                      <div style="font-size: 14px; font-weight: 500">
-                        距离配送中心
-                        <span style="font-weight: 700; font-size: 16px; margin: 0 4px">
-                          {{ formData.sameCityDeliveryRange }}
-                        </span>
-                        公里内的区域支持同城配送
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </el-card>
-
-              <el-alert type="info" :closable="false" show-icon class="mb-15px">
-                <template #default>
-                  <div>
-                    <p class="mb-5px"><strong>使用说明：</strong></p>
-                    <p class="mb-5px">
-                      • 点击"地图选择位置"按钮，可通过地图选择配送中心位置，自动获取经纬度坐标
-                    </p>
-                    <p class="mb-5px">
-                      • 配送范围半径建议与上方"最大配送距离"保持一致，确保配置一致性
-                    </p>
-                    <p class="mb-0">
-                      • 如果未配置配送范围，系统将使用"最大配送距离"作为默认配送范围限制
-                    </p>
-                  </div>
-                </template>
-              </el-alert>
-
-              <!-- 包邮小区管理 -->
-              <el-divider content-position="left">包邮小区管理</el-divider>
-              <el-alert type="warning" :closable="false" show-icon class="mb-15px">
-                <template #default>
-                  <div>
-                    <p class="mb-5px"><strong>功能说明：</strong></p>
-                    <p class="mb-5px">
-                      • 包邮小区内的订单无论订单金额多少，都享受同城配送包邮优惠
-                    </p>
-                    <p class="mb-5px">• 包邮小区配置会覆盖上方的"满额包邮"规则</p>
-                    <p class="mb-0"
-                      >• 通过地图选择小区位置，系统会自动判断订单地址是否在包邮小区范围内</p
-                    >
-                  </div>
-                </template>
-              </el-alert>
-
-              <div style="margin-bottom: 15px">
-                <el-button type="primary" @click="openFreeShippingCommunityForm('create')">
-                  <Icon icon="ep:plus" class="mr-5px" /> 新增包邮小区
-                </el-button>
-              </div>
-
-              <el-table
-                v-loading="freeShippingCommunityLoading"
-                :data="freeShippingCommunityList"
-                border
-              >
-                <el-table-column label="序号" type="index" width="60" align="center" />
-                <el-table-column
-                  label="小区名称"
-                  prop="name"
-                  min-width="150"
-                  show-overflow-tooltip
-                />
-                <el-table-column
-                  label="详细地址"
-                  prop="address"
-                  min-width="200"
-                  show-overflow-tooltip
-                />
-                <el-table-column label="经纬度" width="220" align="center">
-                  <template #default="scope">
-                    <el-text size="small" type="info">
-                      {{ scope.row.latitude }}, {{ scope.row.longitude }}
-                    </el-text>
-                  </template>
-                </el-table-column>
-                <el-table-column
-                  label="创建时间"
-                  prop="createTime"
-                  width="180"
-                  align="center"
-                  :formatter="dateFormatter"
-                />
-                <el-table-column label="操作" width="150" align="center" fixed="right">
-                  <template #default="scope">
-                    <el-button
-                      link
-                      type="primary"
-                      @click="openFreeShippingCommunityForm('update', scope.row)"
-                    >
-                      编辑
-                    </el-button>
-                    <el-button
-                      link
-                      type="danger"
-                      @click="handleFreeShippingCommunityDelete(scope.row)"
-                    >
-                      删除
-                    </el-button>
-                  </template>
-                </el-table-column>
-                <template #empty>
-                  <el-empty description="暂无包邮小区，点击上方按钮添加" :image-size="100" />
-                </template>
-              </el-table>
-            </el-tab-pane>
-
-            <!-- Tab 4: 门店自配送 -->
-            <el-tab-pane label="门店自配送">
-              <!-- 启用开关 -->
-              <el-form-item label="启用门店自配送" prop="deliveryStoreEnabled">
-                <el-switch v-model="formData.deliveryStoreEnabled" style="user-select: none" />
-                <el-text class="ml-10px" size="small" type="info">
-                  开启后，用户可以在APP端选择门店自配送（功能开发中）
+                  订单金额满多少元可免门店自配送费，单位：元
                 </el-text>
               </el-form-item>
               <!-- 门店自配送收费配置 -->
@@ -1296,129 +1512,39 @@
                 </el-alert>
               </template>
 
-              <!-- 门店自配送包邮配置 -->
-              <el-divider content-position="left">门店自配送包邮配置</el-divider>
-              <el-form-item label="启用包邮" prop="storeFreeEnabled">
-                <el-switch v-model="formData.storeFreeEnabled" style="user-select: none" />
-                <el-text class="ml-10px" size="small" type="info">
-                  开启后，满足条件可免门店自配送费
-                </el-text>
-              </el-form-item>
-              <el-form-item v-if="formData.storeFreeEnabled" label="满额包邮" prop="storeFreePrice">
-                <el-input-number
-                  v-model="formData.storeFreePrice"
-                  :min="0"
-                  :precision="2"
-                  class="!w-xs"
-                  placeholder="满额包邮"
-                />
-                <el-text class="ml-10px" size="small" type="info">
-                  订单金额满多少元可免门店自配送费，单位：元
-                </el-text>
-              </el-form-item>
-
-              <!-- 门店配送范围管理（预留） -->
+              <!-- 门店配送范围管理 -->
               <el-divider content-position="left">门店配送范围管理</el-divider>
-              <el-empty description="功能开发中，敬请期待" :image-size="100" />
+              <el-alert type="info" :closable="false" show-icon class="mb-15px">
+                <template #default>
+                  <div>
+                    <p class="mb-5px"><strong>功能说明：</strong></p>
+                    <p class="mb-0">
+                      上传门店配送范围示意图，图片将用于展示给用户和客服，支持上传、修改、删除操作
+                    </p>
+                  </div>
+                </template>
+              </el-alert>
+              <el-form-item label="配送范围示意图" prop="storeDeliveryRangeImageUrl">
+                <UploadImg
+                  v-model="formData.storeDeliveryRangeImageUrl"
+                  :width="'100%'"
+                  :height="'400px'"
+                  :show-delete="true"
+                  :show-btn-text="false"
+                >
+                  <template #tip>
+                    <el-text size="small" type="info">
+                      支持上传门店配送范围示意图，建议图片清晰，包含配送中心位置和覆盖范围标注
+                    </el-text>
+                  </template>
+                </UploadImg>
+              </el-form-item>
             </el-tab-pane>
           </el-tabs>
         </el-tab-pane>
 
-        <!-- 地图选择对话框 -->
-        <el-dialog v-model="mapDialogVisible" title="选择配送中心位置" append-to-body width="800px">
-          <IFrame class="h-609px" :src="tencentLbsUrl" />
-        </el-dialog>
-
-        <!-- 包邮小区表单弹窗 -->
-        <el-dialog
-          v-model="freeShippingCommunityDialogVisible"
-          :title="freeShippingCommunityFormType === 'create' ? '新增包邮小区' : '编辑包邮小区'"
-          width="600px"
-          append-to-body
-        >
-          <el-form
-            ref="freeShippingCommunityFormRef"
-            :model="freeShippingCommunityFormData"
-            :rules="freeShippingCommunityFormRules"
-            label-width="100px"
-          >
-            <el-form-item label="小区名称" prop="name">
-              <el-input
-                v-model="freeShippingCommunityFormData.name"
-                placeholder="请输入小区名称"
-                clearable
-              />
-            </el-form-item>
-            <el-form-item label="详细地址" prop="address">
-              <el-input
-                v-model="freeShippingCommunityFormData.address"
-                type="textarea"
-                :rows="2"
-                placeholder="请输入详细地址"
-                clearable
-              />
-            </el-form-item>
-            <el-form-item label="选择位置">
-              <el-button type="primary" @click="openCommunityMapPicker">
-                <Icon icon="ep:map-location" class="mr-5px" /> 地图选择位置
-              </el-button>
-              <el-text class="ml-10px" size="small" type="info">
-                通过地图选择小区位置，自动获取经纬度
-              </el-text>
-            </el-form-item>
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="纬度" prop="latitude">
-                  <el-input-number
-                    v-model="freeShippingCommunityFormData.latitude"
-                    :min="-90"
-                    :max="90"
-                    :precision="6"
-                    class="!w-full"
-                    placeholder="纬度"
-                    :controls="false"
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="经度" prop="longitude">
-                  <el-input-number
-                    v-model="freeShippingCommunityFormData.longitude"
-                    :min="-180"
-                    :max="180"
-                    :precision="6"
-                    class="!w-full"
-                    placeholder="经度"
-                    :controls="false"
-                  />
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </el-form>
-          <template #footer>
-            <el-button @click="freeShippingCommunityDialogVisible = false">取消</el-button>
-            <el-button
-              type="primary"
-              @click="submitFreeShippingCommunityForm"
-              :loading="freeShippingCommunityFormLoading"
-            >
-              确定
-            </el-button>
-          </template>
-        </el-dialog>
-
-        <!-- 小区地图选择对话框 -->
-        <el-dialog
-          v-model="communityMapDialogVisible"
-          title="选择小区位置"
-          append-to-body
-          width="800px"
-        >
-          <IFrame class="h-609px" :src="tencentLbsUrl" />
-        </el-dialog>
-
         <!-- 包装费 -->
-        <el-tab-pane label="包装费">
+        <el-tab-pane label="包装费" name="packaging">
           <el-form-item label="启用包装费" prop="packagingFeeEnabled">
             <el-switch v-model="formData.packagingFeeEnabled" style="user-select: none" />
             <el-text class="w-full" size="small" type="info"> 商城是否启用包装费</el-text>
@@ -1441,7 +1567,7 @@
           </el-form-item>
         </el-tab-pane>
         <!-- 分销 -->
-        <el-tab-pane label="分销">
+        <el-tab-pane label="分销" name="brokerage">
           <el-form-item label="分佣启用" prop="brokerageEnabled">
             <el-switch v-model="formData.brokerageEnabled" style="user-select: none" />
             <el-text class="w-full" size="small" type="info"> 商城是否开启分销模式</el-text>
@@ -1560,10 +1686,6 @@
           </el-form-item>
         </el-tab-pane>
       </el-tabs>
-      <!-- 保存 -->
-      <el-form-item>
-        <el-button :loading="formLoading" type="primary" @click="submitForm"> 保存</el-button>
-      </el-form-item>
     </el-form>
 
     <!-- 运费模板表单弹窗 -->
@@ -1592,7 +1714,7 @@ import DeliveryPickUpStoreBindForm from '@/views/mall/trade/delivery/pickUpStore
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
 import { cloneDeep } from 'lodash-es'
-import { IFrame } from '@/components/IFrame'
+import UploadImg from '@/components/UploadFile/src/UploadImg.vue'
 
 defineOptions({ name: 'TradeConfig' })
 
@@ -1600,6 +1722,8 @@ const message = useMessage() // 消息弹窗
 
 const formLoading = ref(false) // 表单的加载中：1）修改时的数据加载；2）提交的按钮禁用
 const formRef = ref()
+const activeMainTab = ref('afterSale') // 当前激活的主Tab
+const activeDeliveryTab = ref('express') // 当前激活的配送子Tab
 const formData = ref({
   id: null,
   afterSaleRefundReasons: [],
@@ -1629,7 +1753,7 @@ const formData = ref({
   sameCityDeliveryCenterLatitude: undefined, // 配送中心纬度
   sameCityDeliveryCenterLongitude: undefined, // 配送中心经度
   sameCityDeliveryRange: 20, // 配送范围半径（公里）
-  sameCityFreeShippingCommunities: [] as any[], // 包邮小区列表
+  sameCityDeliveryRangeDescription: '', // 配送范围限制说明
   deliveryStoreEnabled: false, // 启用门店自配送（功能开发中）
   // 门店自配送收费配置
   storeChargeMode: 1, // 计费方式：1-按距离，2-固定费用，3-自定义费用
@@ -1647,6 +1771,7 @@ const formData = ref({
   storeCustomDefaultPrice: 10, // 默认配送费（元）
   storeFreeEnabled: false, // 启用门店自配送包邮
   storeFreePrice: 0, // 满额包邮金额（元）
+  storeDeliveryRangeImageUrl: '', // 门店配送范围示意图URL
   packagingFeeEnabled: false,
   packagingFeePrice: 0,
   brokerageEnabled: false,
@@ -1807,7 +1932,20 @@ const handlePickUpStoreDelete = async (id: number) => {
 // ========== 门店自配送配送范围管理 ==========
 // 注：配送范围管理功能已预留，待后续开发
 const formRules = reactive({
-  deliveryExpressFreePrice: [{ required: true, message: '满额包邮不能为空', trigger: 'blur' }],
+  // 全局包邮价格：只有在启用包邮时才必填
+  deliveryExpressFreePrice: [
+    {
+      validator: (_rule, value, callback) => {
+        if (formData.value.deliveryExpressFreeEnabled && (!value || value <= 0)) {
+          callback(new Error('启用包邮时，满额包邮金额必须大于0'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  // 包装费：只有在启用包装费时才必填
   packagingFeePrice: [
     {
       validator: (_rule, value, callback) => {
@@ -1820,46 +1958,397 @@ const formRules = reactive({
       trigger: 'blur'
     }
   ],
-  brokerageEnabledCondition: [{ required: true, message: '分佣模式不能为空', trigger: 'blur' }],
-  brokerageBindMode: [{ required: true, message: '分销关系绑定模式不能为空', trigger: 'blur' }],
-  brokerageFirstPercent: [{ required: true, message: '一级返佣比例不能为空', trigger: 'blur' }],
-  brokerageSecondPercent: [{ required: true, message: '二级返佣比例不能为空', trigger: 'blur' }],
-  brokerageWithdrawMinPrice: [
-    { required: true, message: '用户提现最低金额不能为空', trigger: 'blur' }
+  // 分销相关字段：只有在启用分销时才必填
+  brokerageEnabledCondition: [
+    {
+      validator: (_rule, value, callback) => {
+        if (formData.value.brokerageEnabled && !value) {
+          callback(new Error('启用分佣时，分佣模式不能为空'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'change'
+    }
   ],
-  brokerageWithdrawFeePercent: [{ required: true, message: '提现手续费不能为空', trigger: 'blur' }],
-  brokerageFrozenDays: [{ required: true, message: '佣金冻结时间不能为空', trigger: 'blur' }],
+  brokerageBindMode: [
+    {
+      validator: (_rule, value, callback) => {
+        if (formData.value.brokerageEnabled && !value) {
+          callback(new Error('启用分佣时，分销关系绑定模式不能为空'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'change'
+    }
+  ],
+  brokerageFirstPercent: [
+    {
+      validator: (_rule, value, callback) => {
+        if (formData.value.brokerageEnabled && (value === undefined || value === null)) {
+          callback(new Error('启用分佣时，一级返佣比例不能为空'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  brokerageSecondPercent: [
+    {
+      validator: (_rule, value, callback) => {
+        if (formData.value.brokerageEnabled && (value === undefined || value === null)) {
+          callback(new Error('启用分佣时，二级返佣比例不能为空'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  brokerageWithdrawMinPrice: [
+    {
+      validator: (_rule, value, callback) => {
+        if (formData.value.brokerageEnabled && (!value || value <= 0)) {
+          callback(new Error('启用分佣时，用户提现最低金额必须大于0'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  brokerageWithdrawFeePercent: [
+    {
+      validator: (_rule, value, callback) => {
+        if (formData.value.brokerageEnabled && (value === undefined || value === null)) {
+          callback(new Error('启用分佣时，提现手续费不能为空'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  brokerageFrozenDays: [
+    {
+      validator: (_rule, value, callback) => {
+        if (formData.value.brokerageEnabled && (!value || value < 0)) {
+          callback(new Error('启用分佣时，佣金冻结时间不能为空且必须大于等于0'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
   brokerageWithdrawTypes: [
     {
-      required: true,
-      message: '提现方式不能为空',
+      validator: (_rule, value, callback) => {
+        if (
+          formData.value.brokerageEnabled &&
+          (!value || (Array.isArray(value) && value.length === 0))
+        ) {
+          callback(new Error('启用分佣时，提现方式不能为空'))
+        } else {
+          callback()
+        }
+      },
       trigger: 'change'
     }
   ]
 })
 
+// 获取当前Tab需要保存的字段列表
+const getCurrentTabFields = (): string[] => {
+  const mainTab = activeMainTab.value
+  const deliveryTab = activeDeliveryTab.value
+
+  // 根据当前激活的Tab返回需要保存的字段
+  if (mainTab === 'afterSale') {
+    return ['afterSaleRefundReasons', 'afterSaleReturnReasons']
+  } else if (mainTab === 'delivery') {
+    if (deliveryTab === 'express') {
+      return ['deliveryExpressEnabled', 'deliveryExpressFreeEnabled', 'deliveryExpressFreePrice']
+    } else if (deliveryTab === 'pickUp') {
+      return ['deliveryPickUpEnabled']
+    } else if (deliveryTab === 'sameCity') {
+      return [
+        'deliverySameCityEnabled',
+        'sameCityChargeMode',
+        'sameCityStartDistance',
+        'sameCityStartPrice',
+        'sameCityExtraDistance',
+        'sameCityExtraPrice',
+        'sameCityMaxDistance',
+        'sameCityFixedPrice',
+        'sameCityCustomPriceEnabled',
+        'sameCityCustomMinPrice',
+        'sameCityCustomMaxPrice',
+        'sameCityCustomNeedAudit',
+        'sameCityCustomDefaultPrice',
+        'sameCityFreeEnabled',
+        'sameCityFreePrice',
+        'sameCityDeliveryRangeDescription'
+      ]
+    } else if (deliveryTab === 'store') {
+      return [
+        'deliveryStoreEnabled',
+        'storeChargeMode',
+        'storeStartDistance',
+        'storeStartPrice',
+        'storeExtraDistance',
+        'storeExtraPrice',
+        'storeMaxDistance',
+        'storeFixedPrice',
+        'storeCustomPriceEnabled',
+        'storeCustomMinPrice',
+        'storeCustomMaxPrice',
+        'storeCustomNeedAudit',
+        'storeCustomDefaultPrice',
+        'storeFreeEnabled',
+        'storeFreePrice',
+        'storeDeliveryRangeImageUrl'
+      ]
+    }
+  } else if (mainTab === 'packaging') {
+    return ['packagingFeeEnabled', 'packagingFeePrice']
+  } else if (mainTab === 'brokerage') {
+    return [
+      'brokerageEnabled',
+      'brokerageEnabledCondition',
+      'brokerageBindMode',
+      'brokeragePosterUrls',
+      'brokerageFirstPercent',
+      'brokerageSecondPercent',
+      'brokerageWithdrawMinPrice',
+      'brokerageWithdrawFeePercent',
+      'brokerageFrozenDays',
+      'brokerageWithdrawTypes'
+    ]
+  }
+  return []
+}
+
 const submitForm = async () => {
   if (formLoading.value) return
   // 校验表单
-  if (!formRef) return
-  const valid = await formRef.value.validate()
-  if (!valid) return
+  if (!formRef.value) {
+    message.error('表单未初始化，请刷新页面重试')
+    return
+  }
+  // 使用 Promise 方式验证，获取详细的错误信息
+  // 只验证当前Tab的字段
+  const currentTabFields = getCurrentTabFields()
+  try {
+    await new Promise<void>((resolve, reject) => {
+      formRef.value.validate((valid: boolean, invalidFields: any) => {
+        if (valid) {
+          resolve()
+        } else {
+          // 过滤出当前Tab的错误字段
+          const currentTabErrors: any = {}
+          if (invalidFields) {
+            Object.keys(invalidFields).forEach((field) => {
+              if (currentTabFields.includes(field)) {
+                currentTabErrors[field] = invalidFields[field]
+              }
+            })
+          }
+          // 如果当前Tab没有错误，但有其他Tab的错误，忽略
+          if (Object.keys(currentTabErrors).length === 0) {
+            resolve()
+            return
+          }
+          console.error('表单验证失败，错误字段:', currentTabErrors)
+          // 提取所有错误字段的名称和错误信息
+          const errorMessages: string[] = []
+          Object.keys(currentTabErrors).forEach((field) => {
+            const fieldErrors = currentTabErrors[field]
+            if (Array.isArray(fieldErrors) && fieldErrors.length > 0) {
+              fieldErrors.forEach((err: any) => {
+                if (err && err.message) {
+                  errorMessages.push(err.message)
+                }
+              })
+            }
+          })
+          // 显示具体的错误信息
+          if (errorMessages.length > 0) {
+            const errorText =
+              errorMessages.length <= 3
+                ? errorMessages.join('；')
+                : errorMessages.slice(0, 3).join('；') + `等 ${errorMessages.length} 项错误`
+            message.warning(`表单验证失败：${errorText}`)
+          } else {
+            message.warning('表单验证失败，请检查表单填写是否正确')
+          }
+          // 自动滚动到第一个错误字段
+          const firstErrorField = Object.keys(currentTabErrors)[0]
+          if (firstErrorField) {
+            // 等待 DOM 更新后再滚动
+            setTimeout(() => {
+              const errorElement =
+                document.querySelector(`[prop="${firstErrorField}"]`) ||
+                document.querySelector(`[name="${firstErrorField}"]`) ||
+                document.querySelector(`[aria-label*="${firstErrorField}"]`)
+              if (errorElement) {
+                errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              }
+            }, 100)
+          }
+          reject(new Error('表单验证失败'))
+        }
+      })
+    })
+  } catch (error: any) {
+    // 验证失败，已经在回调中显示了错误信息，直接返回
+    return
+  }
   // 提交请求
   formLoading.value = true
   try {
-    const data = cloneDeep(unref(formData.value)) as unknown as ConfigApi.ConfigVO
+    // 只更新当前Tab的字段
+    const currentTabFields = getCurrentTabFields()
+    const formDataValue = unref(formData.value)
+    
+    // 如果只更新门店自提，使用专门的接口
+    if (currentTabFields.length === 1 && currentTabFields[0] === 'deliveryPickUpEnabled') {
+      await ConfigApi.updatePickUpConfig({
+        deliveryPickUpEnabled: formDataValue.deliveryPickUpEnabled ?? false
+      })
+      message.success('保存成功')
+      await getConfig()
+      return
+    }
+    
+    // 如果是售后Tab，使用专门的售后接口
+    if (activeMainTab.value === 'afterSale') {
+      await ConfigApi.updateAfterSaleConfig({
+        afterSaleRefundReasons: formDataValue.afterSaleRefundReasons || [],
+        afterSaleReturnReasons: formDataValue.afterSaleReturnReasons || []
+      })
+      message.success('保存成功')
+      await getConfig()
+      return
+    }
+    
+    // 如果是包装费Tab，使用专门的包装费接口
+    if (activeMainTab.value === 'packaging') {
+      // 金额需要从元转换为分
+      const packagingFeePrice = formDataValue.packagingFeePrice != null 
+        ? Math.round(formDataValue.packagingFeePrice * 100) 
+        : 0
+      await ConfigApi.updatePackagingConfig({
+        packagingFeeEnabled: formDataValue.packagingFeeEnabled ?? false,
+        packagingFeePrice: packagingFeePrice
+      })
+      message.success('保存成功')
+      await getConfig()
+      return
+    }
+    
+    // 如果是同城配送Tab，使用专门的同城配送接口
+    if (activeMainTab.value === 'delivery' && activeDeliveryTab.value === 'sameCity') {
+      // 金额需要从元转换为分
+      const sameCityStartPrice = formDataValue.sameCityStartPrice != null 
+        ? Math.round(formDataValue.sameCityStartPrice * 100) 
+        : undefined
+      const sameCityExtraPrice = formDataValue.sameCityExtraPrice != null 
+        ? Math.round(formDataValue.sameCityExtraPrice * 100) 
+        : undefined
+      const sameCityFixedPrice = formDataValue.sameCityFixedPrice != null 
+        ? Math.round(formDataValue.sameCityFixedPrice * 100) 
+        : undefined
+      const sameCityCustomMinPrice = formDataValue.sameCityCustomMinPrice != null 
+        ? Math.round(formDataValue.sameCityCustomMinPrice * 100) 
+        : undefined
+      const sameCityCustomMaxPrice = formDataValue.sameCityCustomMaxPrice != null 
+        ? Math.round(formDataValue.sameCityCustomMaxPrice * 100) 
+        : undefined
+      const sameCityCustomDefaultPrice = formDataValue.sameCityCustomDefaultPrice != null 
+        ? Math.round(formDataValue.sameCityCustomDefaultPrice * 100) 
+        : undefined
+      const sameCityFreePrice = formDataValue.sameCityFreePrice != null 
+        ? Math.round(formDataValue.sameCityFreePrice * 100) 
+        : undefined
+      
+      await ConfigApi.updateSameCityConfig({
+        deliverySameCityEnabled: formDataValue.deliverySameCityEnabled ?? false,
+        sameCityChargeMode: formDataValue.sameCityChargeMode ?? 1,
+        sameCityStartDistance: formDataValue.sameCityStartDistance,
+        sameCityStartPrice: sameCityStartPrice,
+        sameCityExtraDistance: formDataValue.sameCityExtraDistance,
+        sameCityExtraPrice: sameCityExtraPrice,
+        sameCityMaxDistance: formDataValue.sameCityMaxDistance,
+        sameCityFixedPrice: sameCityFixedPrice,
+        sameCityCustomPriceEnabled: formDataValue.sameCityCustomPriceEnabled,
+        sameCityCustomMinPrice: sameCityCustomMinPrice,
+        sameCityCustomMaxPrice: sameCityCustomMaxPrice,
+        sameCityCustomNeedAudit: formDataValue.sameCityCustomNeedAudit,
+        sameCityCustomDefaultPrice: sameCityCustomDefaultPrice,
+        sameCityFreeEnabled: formDataValue.sameCityFreeEnabled,
+        sameCityFreePrice: sameCityFreePrice,
+        sameCityDeliveryRangeDescription: formDataValue.sameCityDeliveryRangeDescription
+      })
+      message.success('保存成功')
+      await getConfig()
+      return
+    }
+    
+    // 其他情况使用通用保存接口
+    // 先获取后端当前完整数据，确保其他Tab的数据不丢失
+    const currentData = await ConfigApi.getTradeConfig()
+    const data = currentData ? cloneDeep(currentData) : ({} as ConfigApi.ConfigVO)
+
+    // 确保包含 id 字段（如果存在）
+    if (formData.value.id) {
+      ;(data as any).id = formData.value.id
+    }
+
+    currentTabFields.forEach((field) => {
+      if (field in formDataValue) {
+        ;(data as any)[field] = formDataValue[field as keyof typeof formDataValue]
+      }
+    })
     // 金额放大（后端以分为单位存储）
-    if (data.deliveryExpressFreePrice) {
-      data.deliveryExpressFreePrice = data.deliveryExpressFreePrice * 100
-    }
-    if (data.brokerageWithdrawMinPrice) {
-      data.brokerageWithdrawMinPrice = data.brokerageWithdrawMinPrice * 100
-    }
-    if (data.packagingFeePrice) {
-      data.packagingFeePrice = data.packagingFeePrice * 100
-    }
+    // 只转换当前Tab相关的金额字段
+    const moneyFields = [
+      'deliveryExpressFreePrice',
+      'brokerageWithdrawMinPrice',
+      'packagingFeePrice',
+      'sameCityStartPrice',
+      'sameCityExtraPrice',
+      'sameCityFixedPrice',
+      'sameCityCustomMinPrice',
+      'sameCityCustomMaxPrice',
+      'sameCityCustomDefaultPrice',
+      'sameCityFreePrice',
+      'storeStartPrice',
+      'storeExtraPrice',
+      'storeFixedPrice',
+      'storeCustomMinPrice',
+      'storeCustomMaxPrice',
+      'storeCustomDefaultPrice',
+      'storeFreePrice'
+    ]
+    moneyFields.forEach((field) => {
+      if (currentTabFields.includes(field)) {
+        const value = (data as any)[field]
+        if (value != null && typeof value === 'number') {
+          ;(data as any)[field] = Math.round(value * 100)
+        }
+      }
+    })
     await ConfigApi.saveTradeConfig(data)
     message.success('保存成功')
+    // 保存成功后重新加载配置，确保数据同步
+    await getConfig()
+  } catch (error: any) {
+    console.error('保存配置失败:', error)
+    const errorMsg = error?.response?.data?.msg || error?.message || '保存失败，请检查配置是否正确'
+    message.error(errorMsg)
   } finally {
     formLoading.value = false
   }
@@ -1882,222 +2371,54 @@ const getConfig = async () => {
       if (data.packagingFeePrice) {
         formData.value.packagingFeePrice = data.packagingFeePrice / 100
       }
+      // 同城配送金额字段转换（分 → 元）
+      if (data.sameCityStartPrice) {
+        formData.value.sameCityStartPrice = data.sameCityStartPrice / 100
+      }
+      if (data.sameCityExtraPrice) {
+        formData.value.sameCityExtraPrice = data.sameCityExtraPrice / 100
+      }
+      if (data.sameCityFixedPrice) {
+        formData.value.sameCityFixedPrice = data.sameCityFixedPrice / 100
+      }
+      if (data.sameCityCustomMinPrice) {
+        formData.value.sameCityCustomMinPrice = data.sameCityCustomMinPrice / 100
+      }
+      if (data.sameCityCustomMaxPrice) {
+        formData.value.sameCityCustomMaxPrice = data.sameCityCustomMaxPrice / 100
+      }
+      if (data.sameCityCustomDefaultPrice) {
+        formData.value.sameCityCustomDefaultPrice = data.sameCityCustomDefaultPrice / 100
+      }
+      if (data.sameCityFreePrice) {
+        formData.value.sameCityFreePrice = data.sameCityFreePrice / 100
+      }
+      // 门店自配送金额字段转换（分 → 元）
+      if (data.storeStartPrice) {
+        formData.value.storeStartPrice = data.storeStartPrice / 100
+      }
+      if (data.storeExtraPrice) {
+        formData.value.storeExtraPrice = data.storeExtraPrice / 100
+      }
+      if (data.storeFixedPrice) {
+        formData.value.storeFixedPrice = data.storeFixedPrice / 100
+      }
+      if (data.storeCustomMinPrice) {
+        formData.value.storeCustomMinPrice = data.storeCustomMinPrice / 100
+      }
+      if (data.storeCustomMaxPrice) {
+        formData.value.storeCustomMaxPrice = data.storeCustomMaxPrice / 100
+      }
+      if (data.storeCustomDefaultPrice) {
+        formData.value.storeCustomDefaultPrice = data.storeCustomDefaultPrice / 100
+      }
+      if (data.storeFreePrice) {
+        formData.value.storeFreePrice = data.storeFreePrice / 100
+      }
     }
   } finally {
     formLoading.value = false
   }
-}
-
-// ========== 同城配送地图选择 ==========
-const mapDialogVisible = ref(false) // 地图弹窗的是否展示
-const tencentLbsUrl = ref('') // 腾讯位置服务 url
-const sameCityDeliveryCenterAddress = ref('') // 配送中心地址
-
-/** 打开地图选择器 */
-const openMapPicker = async () => {
-  if (!tencentLbsUrl.value) {
-    await initTencentLbsMap()
-  }
-  // 设置配送中心选择回调
-  ;(window as any).selectDeliveryCenterAddress = selectDeliveryCenterAddress
-  // 清除小区选择回调
-  delete (window as any).selectCommunityAddress
-  mapDialogVisible.value = true
-}
-
-/** 选择配送中心位置 */
-const selectDeliveryCenterAddress = function (loc: any): void {
-  if (loc.latlng && loc.latlng.lat) {
-    formData.value.sameCityDeliveryCenterLatitude = loc.latlng.lat
-  }
-  if (loc.latlng && loc.latlng.lng) {
-    formData.value.sameCityDeliveryCenterLongitude = loc.latlng.lng
-  }
-  // 保存地址名称
-  if (loc.poi && loc.poi.name) {
-    sameCityDeliveryCenterAddress.value = loc.poi.name
-  } else if (loc.addr) {
-    sameCityDeliveryCenterAddress.value = loc.addr
-  }
-  mapDialogVisible.value = false
-  message.success('配送中心位置已选择')
-}
-
-// 地图消息监听是否已初始化
-let mapMessageListenerInitialized = false
-
-/** 初始化腾讯地图 */
-const initTencentLbsMap = async () => {
-  // 初始化消息监听（只需要初始化一次）
-  if (!mapMessageListenerInitialized) {
-    window.addEventListener(
-      'message',
-      function (event) {
-        // 接收位置信息，用户选择确认位置点后选点组件会触发该事件，回传用户的位置信息
-        let loc = event.data
-        if (loc && loc.module === 'locationPicker') {
-          // 防止其他应用也会向该页面 post 信息，需判断 module 是否为 'locationPicker'
-          // 根据当前打开的地图对话框类型，调用相应的回调函数
-          if ((window as any).selectDeliveryCenterAddress) {
-            ;(window.parent as any).selectDeliveryCenterAddress(loc)
-          } else if ((window as any).selectCommunityAddress) {
-            ;(window.parent as any).selectCommunityAddress(loc)
-          }
-        }
-      },
-      false
-    )
-    mapMessageListenerInitialized = true
-  }
-  const data = await ConfigApi.getTradeConfig()
-  const key = (data as any).tencentLbsKey
-  if (key) {
-    tencentLbsUrl.value = `https://apis.map.qq.com/tools/locpicker?type=1&key=${key}&referer=myapp`
-  } else {
-    message.warning('未配置腾讯地图Key，无法使用地图选择功能')
-  }
-}
-
-// ========== 包邮小区管理 ==========
-const freeShippingCommunityLoading = ref(false)
-const freeShippingCommunityList = ref<any[]>([])
-const freeShippingCommunityDialogVisible = ref(false)
-const freeShippingCommunityFormType = ref<'create' | 'update'>('create')
-const freeShippingCommunityFormLoading = ref(false)
-const freeShippingCommunityFormRef = ref()
-const freeShippingCommunityFormData = ref({
-  id: undefined,
-  name: '',
-  address: '',
-  latitude: undefined,
-  longitude: undefined
-})
-const freeShippingCommunityFormRules = reactive({
-  name: [{ required: true, message: '小区名称不能为空', trigger: 'blur' }],
-  address: [{ required: true, message: '详细地址不能为空', trigger: 'blur' }],
-  latitude: [{ required: true, message: '纬度不能为空', trigger: 'blur' }],
-  longitude: [{ required: true, message: '经度不能为空', trigger: 'blur' }]
-})
-const communityMapDialogVisible = ref(false)
-const selectedCommunityAddress = ref('')
-
-/** 打开包邮小区表单 */
-const openFreeShippingCommunityForm = (type: 'create' | 'update', row?: any) => {
-  freeShippingCommunityFormType.value = type
-  freeShippingCommunityDialogVisible.value = true
-  if (type === 'create') {
-    freeShippingCommunityFormData.value = {
-      id: undefined,
-      name: '',
-      address: '',
-      latitude: undefined,
-      longitude: undefined
-    }
-    selectedCommunityAddress.value = ''
-  } else {
-    freeShippingCommunityFormData.value = {
-      id: row.id,
-      name: row.name || '',
-      address: row.address || '',
-      latitude: row.latitude,
-      longitude: row.longitude
-    }
-    selectedCommunityAddress.value = row.address || ''
-  }
-  freeShippingCommunityFormRef.value?.clearValidate()
-}
-
-/** 提交包邮小区表单 */
-const submitFreeShippingCommunityForm = async () => {
-  if (!freeShippingCommunityFormRef.value) return
-  const valid = await freeShippingCommunityFormRef.value.validate()
-  if (!valid) return
-
-  freeShippingCommunityFormLoading.value = true
-  try {
-    const data = { ...freeShippingCommunityFormData.value }
-    if (freeShippingCommunityFormType.value === 'create') {
-      // 添加新小区到列表
-      freeShippingCommunityList.value.push({
-        id: Date.now(), // 临时ID，实际应该从后端返回
-        name: data.name,
-        address: data.address,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        createTime: new Date().getTime()
-      })
-      message.success('新增包邮小区成功')
-    } else {
-      // 更新小区信息
-      const index = freeShippingCommunityList.value.findIndex((item) => item.id === data.id)
-      if (index !== -1) {
-        freeShippingCommunityList.value[index] = {
-          ...freeShippingCommunityList.value[index],
-          name: data.name,
-          address: data.address,
-          latitude: data.latitude,
-          longitude: data.longitude
-        }
-      }
-      message.success('更新包邮小区成功')
-    }
-    freeShippingCommunityDialogVisible.value = false
-    // TODO: 这里应该调用后端API保存数据
-    // 保存到formData中，随表单一起提交
-    formData.value.sameCityFreeShippingCommunities = freeShippingCommunityList.value
-  } finally {
-    freeShippingCommunityFormLoading.value = false
-  }
-}
-
-/** 删除包邮小区 */
-const handleFreeShippingCommunityDelete = async (row: any) => {
-  try {
-    await message.delConfirm()
-    const index = freeShippingCommunityList.value.findIndex((item) => item.id === row.id)
-    if (index !== -1) {
-      freeShippingCommunityList.value.splice(index, 1)
-      message.success('删除成功')
-      // 更新formData
-      formData.value.sameCityFreeShippingCommunities = freeShippingCommunityList.value
-    }
-    // TODO: 这里应该调用后端API删除数据
-  } catch {}
-}
-
-/** 打开小区地图选择器 */
-const openCommunityMapPicker = async () => {
-  if (!tencentLbsUrl.value) {
-    await initTencentLbsMap()
-  }
-  // 设置小区选择回调
-  ;(window as any).selectCommunityAddress = selectCommunityAddress
-  // 清除配送中心选择回调
-  delete (window as any).selectDeliveryCenterAddress
-  communityMapDialogVisible.value = true
-}
-
-/** 选择小区位置 */
-const selectCommunityAddress = function (loc: any): void {
-  if (loc.latlng && loc.latlng.lat) {
-    freeShippingCommunityFormData.value.latitude = loc.latlng.lat
-  }
-  if (loc.latlng && loc.latlng.lng) {
-    freeShippingCommunityFormData.value.longitude = loc.latlng.lng
-  }
-  // 保存地址名称
-  if (loc.poi && loc.poi.name) {
-    freeShippingCommunityFormData.value.name = loc.poi.name
-    selectedCommunityAddress.value = loc.poi.name
-  }
-  if (loc.addr) {
-    freeShippingCommunityFormData.value.address = loc.addr
-    if (!selectedCommunityAddress.value) {
-      selectedCommunityAddress.value = loc.addr
-    }
-  }
-  communityMapDialogVisible.value = false
-  message.success('小区位置已选择')
 }
 
 /** 初始化 **/
@@ -2107,9 +2428,7 @@ onMounted(() => {
   getExpressTemplateList()
   getExpressList()
   getPickUpStoreList()
-  // 初始化包邮小区列表（如果有数据）
-  if (formData.value.sameCityFreeShippingCommunities) {
-    freeShippingCommunityList.value = formData.value.sameCityFreeShippingCommunities
-  }
 })
 </script>
+
+<style scoped lang="scss"></style>

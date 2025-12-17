@@ -29,15 +29,7 @@ export interface ConfigVO {
   sameCityDeliveryCenterLatitude?: number // 配送中心纬度
   sameCityDeliveryCenterLongitude?: number // 配送中心经度
   sameCityDeliveryRange?: number // 配送范围半径（公里）
-  // 包邮小区配置
-  sameCityFreeShippingCommunities?: Array<{
-    id?: number // 小区ID
-    name: string // 小区名称
-    address: string // 详细地址
-    latitude: number // 纬度
-    longitude: number // 经度
-    createTime?: number // 创建时间
-  }>
+  sameCityDeliveryRangeDescription?: string // 配送范围限制说明
   deliveryStoreEnabled?: boolean // 启用门店自配送（功能开发中）
   // 门店自配送收费配置
   storeChargeMode?: number // 计费方式：1-按距离，2-固定费用，3-自定义费用
@@ -55,6 +47,7 @@ export interface ConfigVO {
   storeCustomDefaultPrice?: number // 默认配送费（元）
   storeFreeEnabled?: boolean // 启用门店自配送包邮
   storeFreePrice?: number // 满额包邮金额（元）
+  storeDeliveryRangeImageUrl?: string // 门店配送范围示意图URL
   packagingFeeEnabled?: boolean
   packagingFeePrice?: number
   brokerageEnabled?: boolean
@@ -77,4 +70,47 @@ export const getTradeConfig = async () => {
 // 保存交易中心配置
 export const saveTradeConfig = async (data: ConfigVO) => {
   return await request.put({ url: `/trade/config/save`, data })
+}
+
+// 更新门店自提配置（仅更新门店自提字段）
+export const updatePickUpConfig = async (data: { deliveryPickUpEnabled: boolean }) => {
+  return await request.put({ url: `/trade/config/update-pickup`, data })
+}
+
+// 更新售后配置（仅更新售后字段）
+export const updateAfterSaleConfig = async (data: {
+  afterSaleRefundReasons: string[]
+  afterSaleReturnReasons: string[]
+}) => {
+  return await request.put({ url: `/trade/config/update-aftersale`, data })
+}
+
+// 更新包装费配置（仅更新包装费字段）
+export const updatePackagingConfig = async (data: {
+  packagingFeeEnabled: boolean
+  packagingFeePrice: number
+}) => {
+  return await request.put({ url: `/trade/config/update-packaging`, data })
+}
+
+// 更新同城配送配置（仅更新同城配送字段）
+export const updateSameCityConfig = async (data: {
+  deliverySameCityEnabled: boolean
+  sameCityChargeMode: number
+  sameCityStartDistance?: number
+  sameCityStartPrice?: number
+  sameCityExtraDistance?: number
+  sameCityExtraPrice?: number
+  sameCityMaxDistance?: number
+  sameCityFixedPrice?: number
+  sameCityCustomPriceEnabled?: boolean
+  sameCityCustomMinPrice?: number
+  sameCityCustomMaxPrice?: number
+  sameCityCustomNeedAudit?: boolean
+  sameCityCustomDefaultPrice?: number
+  sameCityFreeEnabled?: boolean
+  sameCityFreePrice?: number
+  sameCityDeliveryRangeDescription?: string
+}) => {
+  return await request.put({ url: `/trade/config/update-samecity`, data })
 }
