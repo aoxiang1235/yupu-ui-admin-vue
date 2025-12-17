@@ -2229,6 +2229,22 @@ const submitForm = async () => {
     const currentTabFields = getCurrentTabFields()
     const formDataValue = unref(formData.value)
     
+    // 如果是快递发货Tab，使用专门的快递发货接口
+    if (activeMainTab.value === 'delivery' && activeDeliveryTab.value === 'express') {
+      // 金额需要从元转换为分
+      const deliveryExpressFreePrice = formDataValue.deliveryExpressFreePrice != null 
+        ? Math.round(formDataValue.deliveryExpressFreePrice * 100) 
+        : 0
+      await ConfigApi.updateExpressConfig({
+        deliveryExpressEnabled: formDataValue.deliveryExpressEnabled ?? false,
+        deliveryExpressFreeEnabled: formDataValue.deliveryExpressFreeEnabled ?? false,
+        deliveryExpressFreePrice: deliveryExpressFreePrice
+      })
+      message.success('保存成功')
+      await getConfig()
+      return
+    }
+    
     // 如果只更新门店自提，使用专门的接口
     if (currentTabFields.length === 1 && currentTabFields[0] === 'deliveryPickUpEnabled') {
       await ConfigApi.updatePickUpConfig({

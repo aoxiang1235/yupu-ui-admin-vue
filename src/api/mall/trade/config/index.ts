@@ -72,6 +72,15 @@ export const saveTradeConfig = async (data: ConfigVO) => {
   return await request.put({ url: `/trade/config/save`, data })
 }
 
+// 更新快递发货配置（仅更新快递发货字段）
+export const updateExpressConfig = async (data: {
+  deliveryExpressEnabled: boolean
+  deliveryExpressFreeEnabled: boolean
+  deliveryExpressFreePrice: number
+}) => {
+  return await request.put({ url: `/trade/config/update-express`, data })
+}
+
 // 更新门店自提配置（仅更新门店自提字段）
 export const updatePickUpConfig = async (data: { deliveryPickUpEnabled: boolean }) => {
   return await request.put({ url: `/trade/config/update-pickup`, data })
