@@ -145,3 +145,19 @@ export const updateStoreConfig = async (data: {
 }) => {
   return await request.put({ url: `/trade/config/update-store`, data })
 }
+
+// 更新分销配置（仅更新分销字段）
+export const updateBrokerageConfig = async (data: {
+  brokerageEnabled: boolean
+  brokerageEnabledCondition: number
+  brokerageBindMode: number
+  brokeragePosterUrls?: string[]
+  brokerageFirstPercent: number
+  brokerageSecondPercent: number
+  brokerageWithdrawMinPrice: number
+  brokerageWithdrawFeePercent: number
+  brokerageFrozenDays: number
+  brokerageWithdrawTypes: number[]
+}) => {
+  return await request.put({ url: `/trade/config/update-brokerage`, data })
+}

@@ -48,6 +48,19 @@
               />
             </el-select>
           </el-form-item>
+
+          <!-- 保存按钮区域 -->
+          <div style="display: flex; align-items: center; justify-content: flex-end; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e4e7ed">
+            <el-button
+              :loading="formLoading"
+              type="primary"
+              size="default"
+              @click="submitForm"
+            >
+              <Icon icon="ep:check" class="mr-5px" />
+              保存配置
+            </el-button>
+          </div>
         </el-tab-pane>
         <!-- 配送 -->
         <el-tab-pane label="配送" name="delivery">
@@ -1581,6 +1594,19 @@
               每笔订单收取的包装费金额，单位：元
             </el-text>
           </el-form-item>
+
+          <!-- 保存按钮区域 -->
+          <div style="display: flex; align-items: center; justify-content: flex-end; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e4e7ed">
+            <el-button
+              :loading="formLoading"
+              type="primary"
+              size="default"
+              @click="submitForm"
+            >
+              <Icon icon="ep:check" class="mr-5px" />
+              保存配置
+            </el-button>
+          </div>
         </el-tab-pane>
         <!-- 分销 -->
         <el-tab-pane label="分销" name="brokerage">
@@ -1700,6 +1726,19 @@
             </el-checkbox-group>
             <el-text class="w-full" size="small" type="info"> 商城开通提现的付款方式</el-text>
           </el-form-item>
+
+          <!-- 保存按钮区域 -->
+          <div style="display: flex; align-items: center; justify-content: flex-end; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e4e7ed">
+            <el-button
+              :loading="formLoading"
+              type="primary"
+              size="default"
+              @click="submitForm"
+            >
+              <Icon icon="ep:check" class="mr-5px" />
+              保存配置
+            </el-button>
+          </div>
         </el-tab-pane>
       </el-tabs>
     </el-form>
@@ -2371,6 +2410,50 @@ const submitForm = async () => {
         storeFreeEnabled: formDataValue.storeFreeEnabled,
         storeFreePrice: storeFreePrice,
         storeDeliveryRangeImageUrl: formDataValue.storeDeliveryRangeImageUrl
+      })
+      message.success('保存成功')
+      await getConfig()
+      return
+    }
+    
+    // 如果是分销Tab，使用专门的分销接口
+    if (activeMainTab.value === 'brokerage') {
+      // 金额需要从元转换为分
+      const brokerageWithdrawMinPrice = formDataValue.brokerageWithdrawMinPrice != null 
+        ? Math.round(formDataValue.brokerageWithdrawMinPrice * 100) 
+        : 0
+      
+      // 处理 brokeragePosterUrls：如果是字符串数组，直接使用；如果是字符串，转换为数组
+      let brokeragePosterUrls: string[] = []
+      if (formDataValue.brokeragePosterUrls) {
+        if (Array.isArray(formDataValue.brokeragePosterUrls)) {
+          brokeragePosterUrls = formDataValue.brokeragePosterUrls
+        } else if (typeof formDataValue.brokeragePosterUrls === 'string') {
+          brokeragePosterUrls = [formDataValue.brokeragePosterUrls]
+        }
+      }
+      
+      // 处理 brokerageWithdrawTypes：如果是数字数组，直接使用；如果是字符串数组，转换为数字数组
+      let brokerageWithdrawTypes: number[] = []
+      if (formDataValue.brokerageWithdrawTypes) {
+        if (Array.isArray(formDataValue.brokerageWithdrawTypes)) {
+          brokerageWithdrawTypes = formDataValue.brokerageWithdrawTypes.map(item => 
+            typeof item === 'string' ? parseInt(item, 10) : item
+          )
+        }
+      }
+      
+      await ConfigApi.updateBrokerageConfig({
+        brokerageEnabled: formDataValue.brokerageEnabled ?? false,
+        brokerageEnabledCondition: formDataValue.brokerageEnabledCondition ?? 1,
+        brokerageBindMode: formDataValue.brokerageBindMode ?? 1,
+        brokeragePosterUrls: brokeragePosterUrls,
+        brokerageFirstPercent: formDataValue.brokerageFirstPercent ?? 0,
+        brokerageSecondPercent: formDataValue.brokerageSecondPercent ?? 0,
+        brokerageWithdrawMinPrice: brokerageWithdrawMinPrice,
+        brokerageWithdrawFeePercent: formDataValue.brokerageWithdrawFeePercent ?? 0,
+        brokerageFrozenDays: formDataValue.brokerageFrozenDays ?? 7,
+        brokerageWithdrawTypes: brokerageWithdrawTypes
       })
       message.success('保存成功')
       await getConfig()
