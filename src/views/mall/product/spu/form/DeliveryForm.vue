@@ -11,6 +11,9 @@
           {{ dict.label }}
         </el-checkbox>
       </el-checkbox-group>
+      <div class="mt-2 text-gray-500 text-sm">
+        提示：可选择多种配送方式，至少选择一种
+      </div>
     </el-form-item>
     <el-form-item
       label="运费模板"
@@ -25,17 +28,21 @@
           :value="item.id"
         />
       </el-select>
+      <div class="mt-2 text-gray-500 text-sm">
+        提示：选择快递发货时，必须配置运费模板
+      </div>
     </el-form-item>
   </el-form>
 </template>
 <script lang="ts" setup>
-import { PropType } from 'vue'
+import { PropType, computed, watch } from 'vue'
 import { copyValueToTarget } from '@/utils'
 import { propTypes } from '@/utils/propTypes'
 import type { Spu } from '@/api/mall/product/spu'
 import * as ExpressTemplateApi from '@/api/mall/trade/delivery/expressTemplate'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { DeliveryTypeEnum } from '@/utils/constants'
+import { required } from '@/utils/formRules'
 
 defineOptions({ name: 'ProductDeliveryForm' })
 
@@ -53,9 +60,22 @@ const formData = reactive<Spu>({
   deliveryTypes: [], // 配送方式
   deliveryTemplateId: undefined // 运费模版
 })
-const rules = reactive({
-  deliveryTypes: [required],
-  deliveryTemplateId: [required]
+
+// 动态验证规则：运费模板只在选择快递发货时必填
+const rules = computed(() => {
+  const baseRules: any = {
+    deliveryTypes: [required]
+  }
+  
+  // 如果选择了快递发货，运费模板才是必填的
+  if (formData.deliveryTypes?.includes(DeliveryTypeEnum.EXPRESS.type)) {
+    baseRules.deliveryTemplateId = [required]
+  } else {
+    // 未选择快递发货时，移除必填验证（清空操作在 watch 中处理）
+    baseRules.deliveryTemplateId = []
+  }
+  
+  return baseRules
 })
 
 /** 将传进来的值赋值给 formData */
@@ -70,6 +90,22 @@ watch(
   {
     immediate: true
   }
+)
+
+/** 监听配送方式变化，自动处理运费模板 */
+watch(
+  () => formData.deliveryTypes,
+  (newTypes) => {
+    // 如果取消选择快递发货，清空运费模板
+    if (!newTypes?.includes(DeliveryTypeEnum.EXPRESS.type)) {
+      formData.deliveryTemplateId = undefined
+    }
+    // 触发表单验证更新
+    if (formRef.value) {
+      formRef.value.clearValidate('deliveryTemplateId')
+    }
+  },
+  { deep: true }
 )
 
 /** 表单校验 */
@@ -89,7 +125,7 @@ const validate = async () => {
 defineExpose({ validate })
 
 /** 初始化 */
-const deliveryTemplateList = ref([]) // 运费模版
+const deliveryTemplateList = ref<DeliveryExpressTemplateVO[]>([]) // 运费模版
 onMounted(async () => {
   deliveryTemplateList.value = await ExpressTemplateApi.getSimpleTemplateList()
 })
