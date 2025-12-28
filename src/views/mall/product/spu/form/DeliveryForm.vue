@@ -2,17 +2,20 @@
 <template>
   <el-form ref="formRef" :model="formData" :rules="rules" label-width="120px" :disabled="isDetail">
     <el-form-item label="配送方式" prop="deliveryTypes">
-      <el-checkbox-group v-model="formData.deliveryTypes" class="w-80">
-        <el-checkbox
-          v-for="dict in getIntDictOptions(DICT_TYPE.TRADE_DELIVERY_TYPE)"
-          :key="dict.value"
-          :value="dict.value"
-        >
-          {{ dict.label }}
-        </el-checkbox>
+      <el-checkbox-group v-model="formData.deliveryTypes" class="w-full">
+        <div class="flex flex-wrap gap-4">
+          <el-checkbox
+            v-for="dict in getIntDictOptions(DICT_TYPE.TRADE_DELIVERY_TYPE)"
+            :key="dict.value"
+            :value="dict.value"
+            class="!mr-0"
+          >
+            <span class="font-medium">{{ dict.label }}</span>
+          </el-checkbox>
+        </div>
       </el-checkbox-group>
       <div class="mt-2 text-gray-500 text-sm">
-        提示：可选择多种配送方式，至少选择一种
+        💡 提示：可选择多种配送方式，至少选择一种。选择"快递发货"时，需要配置运费模板。
       </div>
     </el-form-item>
     <el-form-item
@@ -40,6 +43,7 @@ import { copyValueToTarget } from '@/utils'
 import { propTypes } from '@/utils/propTypes'
 import type { Spu } from '@/api/mall/product/spu'
 import * as ExpressTemplateApi from '@/api/mall/trade/delivery/expressTemplate'
+import type { DeliveryExpressTemplateVO } from '@/api/mall/trade/delivery/expressTemplate'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { DeliveryTypeEnum } from '@/utils/constants'
 import { required } from '@/utils/formRules'
