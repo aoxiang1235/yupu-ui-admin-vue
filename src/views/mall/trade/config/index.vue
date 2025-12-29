@@ -1595,6 +1595,34 @@
             </el-text>
           </el-form-item>
 
+          <el-form-item
+            v-if="formData.packagingFeeEnabled"
+            label="启用满额免包装费"
+            prop="packagingFeeFreeEnabled"
+          >
+            <el-switch v-model="formData.packagingFeeFreeEnabled" style="user-select: none" />
+            <el-text class="w-full" size="small" type="info">
+              订单金额达到设定金额时，免收包装费
+            </el-text>
+          </el-form-item>
+
+          <el-form-item
+            v-if="formData.packagingFeeEnabled && formData.packagingFeeFreeEnabled"
+            label="满额免包装费金额"
+            prop="packagingFeeFreePrice"
+          >
+            <el-input-number
+              v-model="formData.packagingFeeFreePrice"
+              :min="0"
+              :precision="2"
+              class="!w-xs"
+              placeholder="请输入满额免包装费金额"
+            />
+            <el-text class="w-full" size="small" type="info">
+              订单金额达到此金额时，免收包装费，单位：元
+            </el-text>
+          </el-form-item>
+
           <!-- 保存按钮区域 -->
           <div style="display: flex; align-items: center; justify-content: flex-end; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e4e7ed">
             <el-button
@@ -1829,6 +1857,8 @@ const formData = ref({
   storeDeliveryRangeImageUrl: '', // 门店配送范围示意图URL
   packagingFeeEnabled: false,
   packagingFeePrice: 0,
+  packagingFeeFreeEnabled: false,
+  packagingFeeFreePrice: 0,
   brokerageEnabled: false,
   brokerageEnabledCondition: undefined,
   brokerageBindMode: undefined,
@@ -2013,6 +2043,19 @@ const formRules = reactive({
       trigger: 'blur'
     }
   ],
+  // 满额免包装费金额：只有在启用满额免包装费时才必填
+  packagingFeeFreePrice: [
+    {
+      validator: (_rule, value, callback) => {
+        if (formData.value.packagingFeeEnabled && formData.value.packagingFeeFreeEnabled && (!value || value <= 0)) {
+          callback(new Error('启用满额免包装费时，满额免包装费金额必须大于0'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
   // 分销相关字段：只有在启用分销时才必填
   brokerageEnabledCondition: [
     {
@@ -2168,7 +2211,7 @@ const getCurrentTabFields = (): string[] => {
       ]
     }
   } else if (mainTab === 'packaging') {
-    return ['packagingFeeEnabled', 'packagingFeePrice']
+    return ['packagingFeeEnabled', 'packagingFeePrice', 'packagingFeeFreeEnabled', 'packagingFeeFreePrice']
   } else if (mainTab === 'brokerage') {
     return [
       'brokerageEnabled',
@@ -2311,9 +2354,14 @@ const submitForm = async () => {
       const packagingFeePrice = formDataValue.packagingFeePrice != null 
         ? Math.round(formDataValue.packagingFeePrice * 100) 
         : 0
+      const packagingFeeFreePrice = formDataValue.packagingFeeFreePrice != null 
+        ? Math.round(formDataValue.packagingFeeFreePrice * 100) 
+        : 0
       await ConfigApi.updatePackagingConfig({
         packagingFeeEnabled: formDataValue.packagingFeeEnabled ?? false,
-        packagingFeePrice: packagingFeePrice
+        packagingFeePrice: packagingFeePrice,
+        packagingFeeFreeEnabled: formDataValue.packagingFeeFreeEnabled ?? false,
+        packagingFeeFreePrice: packagingFeeFreePrice
       })
       message.success('保存成功')
       await getConfig()
@@ -2533,6 +2581,12 @@ const getConfig = async () => {
       }
       if (data.packagingFeePrice) {
         formData.value.packagingFeePrice = data.packagingFeePrice / 100
+      }
+      if (data.packagingFeeFreeEnabled !== undefined) {
+        formData.value.packagingFeeFreeEnabled = data.packagingFeeFreeEnabled
+      }
+      if (data.packagingFeeFreePrice) {
+        formData.value.packagingFeeFreePrice = data.packagingFeeFreePrice / 100
       }
       // 同城配送金额字段转换（分 → 元）
       if (data.sameCityStartPrice) {

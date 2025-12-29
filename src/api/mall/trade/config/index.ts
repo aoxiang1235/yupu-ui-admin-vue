@@ -50,6 +50,8 @@ export interface ConfigVO {
   storeDeliveryRangeImageUrl?: string // 门店配送范围示意图URL
   packagingFeeEnabled?: boolean
   packagingFeePrice?: number
+  packagingFeeFreeEnabled?: boolean
+  packagingFeeFreePrice?: number
   brokerageEnabled?: boolean
   brokerageEnabledCondition?: number
   brokerageBindMode?: number
@@ -98,6 +100,8 @@ export const updateAfterSaleConfig = async (data: {
 export const updatePackagingConfig = async (data: {
   packagingFeeEnabled: boolean
   packagingFeePrice: number
+  packagingFeeFreeEnabled?: boolean
+  packagingFeeFreePrice?: number
 }) => {
   return await request.put({ url: `/trade/config/update-packaging`, data })
 }
