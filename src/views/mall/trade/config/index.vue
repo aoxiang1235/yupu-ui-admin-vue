@@ -2579,14 +2579,18 @@ const getConfig = async () => {
       if (data.brokerageWithdrawMinPrice) {
         formData.value.brokerageWithdrawMinPrice = data.brokerageWithdrawMinPrice / 100
       }
-      if (data.packagingFeePrice) {
+      if (data.packagingFeePrice != null) {
         formData.value.packagingFeePrice = data.packagingFeePrice / 100
       }
-      if (data.packagingFeeFreeEnabled !== undefined) {
+      if (data.packagingFeeFreeEnabled !== undefined && data.packagingFeeFreeEnabled !== null) {
         formData.value.packagingFeeFreeEnabled = data.packagingFeeFreeEnabled
+      } else {
+        formData.value.packagingFeeFreeEnabled = false
       }
-      if (data.packagingFeeFreePrice) {
+      if (data.packagingFeeFreePrice != null) {
         formData.value.packagingFeeFreePrice = data.packagingFeeFreePrice / 100
+      } else {
+        formData.value.packagingFeeFreePrice = 0
       }
       // 同城配送金额字段转换（分 → 元）
       if (data.sameCityStartPrice) {
