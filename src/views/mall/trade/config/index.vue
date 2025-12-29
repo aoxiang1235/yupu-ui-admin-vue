@@ -2572,6 +2572,13 @@ const getConfig = async () => {
     const data = await ConfigApi.getTradeConfig()
     if (data != null) {
       formData.value = data
+      // 确保满额免包装费字段有默认值（防止后端没有返回这些字段）
+      if (formData.value.packagingFeeFreeEnabled === undefined || formData.value.packagingFeeFreeEnabled === null) {
+        formData.value.packagingFeeFreeEnabled = false
+      }
+      if (formData.value.packagingFeeFreePrice === undefined || formData.value.packagingFeeFreePrice === null) {
+        formData.value.packagingFeeFreePrice = 0
+      }
       // 金额缩小（后端以分为单位存储，前端以元为单位显示）
       if (data.deliveryExpressFreePrice) {
         formData.value.deliveryExpressFreePrice = data.deliveryExpressFreePrice / 100
@@ -2582,15 +2589,12 @@ const getConfig = async () => {
       if (data.packagingFeePrice != null) {
         formData.value.packagingFeePrice = data.packagingFeePrice / 100
       }
+      // 处理满额免包装费字段
       if (data.packagingFeeFreeEnabled !== undefined && data.packagingFeeFreeEnabled !== null) {
-        formData.value.packagingFeeFreeEnabled = data.packagingFeeFreeEnabled
-      } else {
-        formData.value.packagingFeeFreeEnabled = false
+        formData.value.packagingFeeFreeEnabled = Boolean(data.packagingFeeFreeEnabled)
       }
       if (data.packagingFeeFreePrice != null) {
         formData.value.packagingFeeFreePrice = data.packagingFeeFreePrice / 100
-      } else {
-        formData.value.packagingFeeFreePrice = 0
       }
       // 同城配送金额字段转换（分 → 元）
       if (data.sameCityStartPrice) {
