@@ -1019,88 +1019,6 @@
                 </el-alert>
               </template>
 
-              <!-- 自定义费用配置 -->
-              <template v-if="formData.sameCityChargeMode === 3">
-                <el-form-item label="启用自定义费用" prop="sameCityCustomPriceEnabled">
-                  <el-switch
-                    v-model="formData.sameCityCustomPriceEnabled"
-                    style="user-select: none"
-                  />
-                  <el-text class="ml-10px" size="small" type="info">
-                    开启后，用户可在下单时手动填写同城配送费用
-                  </el-text>
-                </el-form-item>
-                <el-form-item
-                  v-if="formData.sameCityCustomPriceEnabled"
-                  label="最低配送费"
-                  prop="sameCityCustomMinPrice"
-                >
-                  <el-input-number
-                    v-model="formData.sameCityCustomMinPrice"
-                    :min="0"
-                    :precision="2"
-                    class="!w-xs"
-                    placeholder="最低配送费"
-                  />
-                  <el-text class="ml-10px" size="small" type="info">
-                    用户填写配送费的最低金额限制，单位：元
-                  </el-text>
-                </el-form-item>
-                <el-form-item
-                  v-if="formData.sameCityCustomPriceEnabled"
-                  label="最高配送费"
-                  prop="sameCityCustomMaxPrice"
-                >
-                  <el-input-number
-                    v-model="formData.sameCityCustomMaxPrice"
-                    :min="0"
-                    :precision="2"
-                    class="!w-xs"
-                    placeholder="最高配送费"
-                  />
-                  <el-text class="ml-10px" size="small" type="info">
-                    用户填写配送费的最高金额限制，单位：元（0表示不限制）
-                  </el-text>
-                </el-form-item>
-                <el-form-item
-                  v-if="formData.sameCityCustomPriceEnabled"
-                  label="是否需要商家审核"
-                  prop="sameCityCustomNeedAudit"
-                >
-                  <el-switch v-model="formData.sameCityCustomNeedAudit" style="user-select: none" />
-                  <el-text class="ml-10px" size="small" type="info">
-                    开启后，用户填写的配送费需要商家审核确认后才能支付
-                  </el-text>
-                </el-form-item>
-                <el-form-item
-                  v-if="formData.sameCityCustomPriceEnabled"
-                  label="默认配送费"
-                  prop="sameCityCustomDefaultPrice"
-                >
-                  <el-input-number
-                    v-model="formData.sameCityCustomDefaultPrice"
-                    :min="0"
-                    :precision="2"
-                    class="!w-xs"
-                    placeholder="默认配送费"
-                  />
-                  <el-text class="ml-10px" size="small" type="info">
-                    用户下单时显示的默认配送费，单位：元（用户可修改）
-                  </el-text>
-                </el-form-item>
-                <el-alert type="warning" :closable="false" show-icon class="mb-15px">
-                  <template #default>
-                    <div>
-                      <p class="mb-5px"><strong>使用说明：</strong></p>
-                      <p class="mb-0"> • 用户选择同城配送后，可在下单页面手动填写配送费用 </p>
-                      <p class="mb-0"> • 适用于商家与用户沟通后确定配送费的特殊场景 </p>
-                      <p class="mb-0"> • 可设置费用范围限制，防止用户填写异常金额 </p>
-                      <p class="mb-0"> • 如需商家审核，用户提交订单后需等待商家确认配送费 </p>
-                    </div>
-                  </template>
-                </el-alert>
-              </template>
-
               <!-- 配送范围管理 -->
               <el-divider content-position="left">配送范围管理</el-divider>
               <el-alert type="info" :closable="false" show-icon class="mb-15px">
@@ -1446,85 +1364,6 @@
                 </el-alert>
               </template>
 
-              <!-- 自定义费用配置 -->
-              <template v-if="formData.storeChargeMode === 3">
-                <el-form-item label="启用自定义费用" prop="storeCustomPriceEnabled">
-                  <el-switch v-model="formData.storeCustomPriceEnabled" style="user-select: none" />
-                  <el-text class="ml-10px" size="small" type="info">
-                    开启后，用户可在下单时手动填写门店自配送费用
-                  </el-text>
-                </el-form-item>
-                <el-form-item
-                  v-if="formData.storeCustomPriceEnabled"
-                  label="最低配送费"
-                  prop="storeCustomMinPrice"
-                >
-                  <el-input-number
-                    v-model="formData.storeCustomMinPrice"
-                    :min="0"
-                    :precision="2"
-                    class="!w-xs"
-                    placeholder="最低配送费"
-                  />
-                  <el-text class="ml-10px" size="small" type="info">
-                    用户填写配送费的最低金额限制，单位：元
-                  </el-text>
-                </el-form-item>
-                <el-form-item
-                  v-if="formData.storeCustomPriceEnabled"
-                  label="最高配送费"
-                  prop="storeCustomMaxPrice"
-                >
-                  <el-input-number
-                    v-model="formData.storeCustomMaxPrice"
-                    :min="0"
-                    :precision="2"
-                    class="!w-xs"
-                    placeholder="最高配送费"
-                  />
-                  <el-text class="ml-10px" size="small" type="info">
-                    用户填写配送费的最高金额限制，单位：元（0表示不限制）
-                  </el-text>
-                </el-form-item>
-                <el-form-item
-                  v-if="formData.storeCustomPriceEnabled"
-                  label="是否需要商家审核"
-                  prop="storeCustomNeedAudit"
-                >
-                  <el-switch v-model="formData.storeCustomNeedAudit" style="user-select: none" />
-                  <el-text class="ml-10px" size="small" type="info">
-                    开启后，用户填写的配送费需要商家审核确认后才能支付
-                  </el-text>
-                </el-form-item>
-                <el-form-item
-                  v-if="formData.storeCustomPriceEnabled"
-                  label="默认配送费"
-                  prop="storeCustomDefaultPrice"
-                >
-                  <el-input-number
-                    v-model="formData.storeCustomDefaultPrice"
-                    :min="0"
-                    :precision="2"
-                    class="!w-xs"
-                    placeholder="默认配送费"
-                  />
-                  <el-text class="ml-10px" size="small" type="info">
-                    用户下单时显示的默认配送费，单位：元（用户可修改）
-                  </el-text>
-                </el-form-item>
-                <el-alert type="warning" :closable="false" show-icon class="mb-15px">
-                  <template #default>
-                    <div>
-                      <p class="mb-5px"><strong>使用说明：</strong></p>
-                      <p class="mb-0"> • 用户选择门店自配送后，可在下单页面手动填写配送费用 </p>
-                      <p class="mb-0"> • 适用于商家与用户沟通后确定配送费的特殊场景 </p>
-                      <p class="mb-0"> • 可设置费用范围限制，防止用户填写异常金额 </p>
-                      <p class="mb-0"> • 如需商家审核，用户提交订单后需等待商家确认配送费 </p>
-                    </div>
-                  </template>
-                </el-alert>
-              </template>
-
               <!-- 门店配送范围管理 -->
               <el-divider content-position="left">门店配送范围管理</el-divider>
               <el-alert type="info" :closable="false" show-icon class="mb-15px">
@@ -1824,12 +1663,6 @@ const formData = ref({
   sameCityExtraPrice: 5, // 续费（元）
   sameCityMaxDistance: 20, // 最大配送距离（公里）
   sameCityFixedPrice: 15, // 固定配送费（元）
-  // 自定义费用配置（模式3）
-  sameCityCustomPriceEnabled: true, // 启用自定义费用
-  sameCityCustomMinPrice: 0, // 最低配送费（元）
-  sameCityCustomMaxPrice: 0, // 最高配送费（元，0表示不限制）
-  sameCityCustomNeedAudit: false, // 是否需要商家审核
-  sameCityCustomDefaultPrice: 10, // 默认配送费（元）
   sameCityFreeEnabled: false, // 启用同城配送包邮
   sameCityFreePrice: 0, // 满额包邮金额（元）
   // 同城配送范围配置
@@ -1846,12 +1679,6 @@ const formData = ref({
   storeExtraPrice: 5, // 续费（元）
   storeMaxDistance: 20, // 最大配送距离（公里）
   storeFixedPrice: 15, // 固定配送费（元）
-  // 自定义费用配置（模式3）
-  storeCustomPriceEnabled: true, // 启用自定义费用
-  storeCustomMinPrice: 0, // 最低配送费（元）
-  storeCustomMaxPrice: 0, // 最高配送费（元，0表示不限制）
-  storeCustomNeedAudit: false, // 是否需要商家审核
-  storeCustomDefaultPrice: 10, // 默认配送费（元）
   storeFreeEnabled: false, // 启用门店自配送包邮
   storeFreePrice: 0, // 满额包邮金额（元）
   storeDeliveryRangeImageUrl: '', // 门店配送范围示意图URL
@@ -2181,11 +2008,6 @@ const getCurrentTabFields = (): string[] => {
         'sameCityExtraPrice',
         'sameCityMaxDistance',
         'sameCityFixedPrice',
-        'sameCityCustomPriceEnabled',
-        'sameCityCustomMinPrice',
-        'sameCityCustomMaxPrice',
-        'sameCityCustomNeedAudit',
-        'sameCityCustomDefaultPrice',
         'sameCityFreeEnabled',
         'sameCityFreePrice',
         'sameCityDeliveryRangeDescription'
@@ -2200,11 +2022,6 @@ const getCurrentTabFields = (): string[] => {
         'storeExtraPrice',
         'storeMaxDistance',
         'storeFixedPrice',
-        'storeCustomPriceEnabled',
-        'storeCustomMinPrice',
-        'storeCustomMaxPrice',
-        'storeCustomNeedAudit',
-        'storeCustomDefaultPrice',
         'storeFreeEnabled',
         'storeFreePrice',
         'storeDeliveryRangeImageUrl'
@@ -2380,15 +2197,6 @@ const submitForm = async () => {
       const sameCityFixedPrice = formDataValue.sameCityFixedPrice != null 
         ? Math.round(formDataValue.sameCityFixedPrice * 100) 
         : undefined
-      const sameCityCustomMinPrice = formDataValue.sameCityCustomMinPrice != null 
-        ? Math.round(formDataValue.sameCityCustomMinPrice * 100) 
-        : undefined
-      const sameCityCustomMaxPrice = formDataValue.sameCityCustomMaxPrice != null 
-        ? Math.round(formDataValue.sameCityCustomMaxPrice * 100) 
-        : undefined
-      const sameCityCustomDefaultPrice = formDataValue.sameCityCustomDefaultPrice != null 
-        ? Math.round(formDataValue.sameCityCustomDefaultPrice * 100) 
-        : undefined
       const sameCityFreePrice = formDataValue.sameCityFreePrice != null 
         ? Math.round(formDataValue.sameCityFreePrice * 100) 
         : undefined
@@ -2402,11 +2210,6 @@ const submitForm = async () => {
         sameCityExtraPrice: sameCityExtraPrice,
         sameCityMaxDistance: formDataValue.sameCityMaxDistance,
         sameCityFixedPrice: sameCityFixedPrice,
-        sameCityCustomPriceEnabled: formDataValue.sameCityCustomPriceEnabled,
-        sameCityCustomMinPrice: sameCityCustomMinPrice,
-        sameCityCustomMaxPrice: sameCityCustomMaxPrice,
-        sameCityCustomNeedAudit: formDataValue.sameCityCustomNeedAudit,
-        sameCityCustomDefaultPrice: sameCityCustomDefaultPrice,
         sameCityFreeEnabled: formDataValue.sameCityFreeEnabled,
         sameCityFreePrice: sameCityFreePrice,
         sameCityDeliveryRangeDescription: formDataValue.sameCityDeliveryRangeDescription
@@ -2428,15 +2231,6 @@ const submitForm = async () => {
       const storeFixedPrice = formDataValue.storeFixedPrice != null 
         ? Math.round(formDataValue.storeFixedPrice * 100) 
         : undefined
-      const storeCustomMinPrice = formDataValue.storeCustomMinPrice != null 
-        ? Math.round(formDataValue.storeCustomMinPrice * 100) 
-        : undefined
-      const storeCustomMaxPrice = formDataValue.storeCustomMaxPrice != null 
-        ? Math.round(formDataValue.storeCustomMaxPrice * 100) 
-        : undefined
-      const storeCustomDefaultPrice = formDataValue.storeCustomDefaultPrice != null 
-        ? Math.round(formDataValue.storeCustomDefaultPrice * 100) 
-        : undefined
       const storeFreePrice = formDataValue.storeFreePrice != null 
         ? Math.round(formDataValue.storeFreePrice * 100) 
         : undefined
@@ -2450,11 +2244,6 @@ const submitForm = async () => {
         storeExtraPrice: storeExtraPrice,
         storeMaxDistance: formDataValue.storeMaxDistance,
         storeFixedPrice: storeFixedPrice,
-        storeCustomPriceEnabled: formDataValue.storeCustomPriceEnabled,
-        storeCustomMinPrice: storeCustomMinPrice,
-        storeCustomMaxPrice: storeCustomMaxPrice,
-        storeCustomNeedAudit: formDataValue.storeCustomNeedAudit,
-        storeCustomDefaultPrice: storeCustomDefaultPrice,
         storeFreeEnabled: formDataValue.storeFreeEnabled,
         storeFreePrice: storeFreePrice,
         storeDeliveryRangeImageUrl: formDataValue.storeDeliveryRangeImageUrl
@@ -2532,16 +2321,10 @@ const submitForm = async () => {
       'sameCityStartPrice',
       'sameCityExtraPrice',
       'sameCityFixedPrice',
-      'sameCityCustomMinPrice',
-      'sameCityCustomMaxPrice',
-      'sameCityCustomDefaultPrice',
       'sameCityFreePrice',
       'storeStartPrice',
       'storeExtraPrice',
       'storeFixedPrice',
-      'storeCustomMinPrice',
-      'storeCustomMaxPrice',
-      'storeCustomDefaultPrice',
       'storeFreePrice'
     ]
     moneyFields.forEach((field) => {
@@ -2606,15 +2389,6 @@ const getConfig = async () => {
       if (data.sameCityFixedPrice) {
         formData.value.sameCityFixedPrice = data.sameCityFixedPrice / 100
       }
-      if (data.sameCityCustomMinPrice) {
-        formData.value.sameCityCustomMinPrice = data.sameCityCustomMinPrice / 100
-      }
-      if (data.sameCityCustomMaxPrice) {
-        formData.value.sameCityCustomMaxPrice = data.sameCityCustomMaxPrice / 100
-      }
-      if (data.sameCityCustomDefaultPrice) {
-        formData.value.sameCityCustomDefaultPrice = data.sameCityCustomDefaultPrice / 100
-      }
       if (data.sameCityFreePrice) {
         formData.value.sameCityFreePrice = data.sameCityFreePrice / 100
       }
@@ -2627,15 +2401,6 @@ const getConfig = async () => {
       }
       if (data.storeFixedPrice) {
         formData.value.storeFixedPrice = data.storeFixedPrice / 100
-      }
-      if (data.storeCustomMinPrice) {
-        formData.value.storeCustomMinPrice = data.storeCustomMinPrice / 100
-      }
-      if (data.storeCustomMaxPrice) {
-        formData.value.storeCustomMaxPrice = data.storeCustomMaxPrice / 100
-      }
-      if (data.storeCustomDefaultPrice) {
-        formData.value.storeCustomDefaultPrice = data.storeCustomDefaultPrice / 100
       }
       if (data.storeFreePrice) {
         formData.value.storeFreePrice = data.storeFreePrice / 100

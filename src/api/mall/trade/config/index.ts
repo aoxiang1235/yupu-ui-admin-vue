@@ -17,12 +17,6 @@ export interface ConfigVO {
   sameCityExtraPrice?: number // 续费（元）
   sameCityMaxDistance?: number // 最大配送距离（公里）
   sameCityFixedPrice?: number // 固定配送费（元）
-  // 自定义费用配置（模式3）
-  sameCityCustomPriceEnabled?: boolean // 启用自定义费用
-  sameCityCustomMinPrice?: number // 最低配送费（元）
-  sameCityCustomMaxPrice?: number // 最高配送费（元，0表示不限制）
-  sameCityCustomNeedAudit?: boolean // 是否需要商家审核
-  sameCityCustomDefaultPrice?: number // 默认配送费（元）
   sameCityFreeEnabled?: boolean // 启用同城配送包邮
   sameCityFreePrice?: number // 满额包邮金额（元）
   // 同城配送范围配置
@@ -39,12 +33,6 @@ export interface ConfigVO {
   storeExtraPrice?: number // 续费（元）
   storeMaxDistance?: number // 最大配送距离（公里）
   storeFixedPrice?: number // 固定配送费（元）
-  // 自定义费用配置（模式3）
-  storeCustomPriceEnabled?: boolean // 启用自定义费用
-  storeCustomMinPrice?: number // 最低配送费（元）
-  storeCustomMaxPrice?: number // 最高配送费（元，0表示不限制）
-  storeCustomNeedAudit?: boolean // 是否需要商家审核
-  storeCustomDefaultPrice?: number // 默认配送费（元）
   storeFreeEnabled?: boolean // 启用门店自配送包邮
   storeFreePrice?: number // 满额包邮金额（元）
   storeDeliveryRangeImageUrl?: string // 门店配送范围示意图URL
@@ -116,11 +104,6 @@ export const updateSameCityConfig = async (data: {
   sameCityExtraPrice?: number
   sameCityMaxDistance?: number
   sameCityFixedPrice?: number
-  sameCityCustomPriceEnabled?: boolean
-  sameCityCustomMinPrice?: number
-  sameCityCustomMaxPrice?: number
-  sameCityCustomNeedAudit?: boolean
-  sameCityCustomDefaultPrice?: number
   sameCityFreeEnabled?: boolean
   sameCityFreePrice?: number
   sameCityDeliveryRangeDescription?: string
@@ -138,11 +121,6 @@ export const updateStoreConfig = async (data: {
   storeExtraPrice?: number
   storeMaxDistance?: number
   storeFixedPrice?: number
-  storeCustomPriceEnabled?: boolean
-  storeCustomMinPrice?: number
-  storeCustomMaxPrice?: number
-  storeCustomNeedAudit?: boolean
-  storeCustomDefaultPrice?: number
   storeFreeEnabled?: boolean
   storeFreePrice?: number
   storeDeliveryRangeImageUrl?: string

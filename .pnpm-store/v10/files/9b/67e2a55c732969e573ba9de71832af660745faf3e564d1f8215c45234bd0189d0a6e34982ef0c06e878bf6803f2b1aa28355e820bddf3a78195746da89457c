@@ -1,0 +1,57 @@
+import { Plugin } from 'vite';
+import { Config } from 'svgo';
+
+type SvgoConfig = Omit<Config, 'path'> | false;
+type InjectMode = 'body-first' | 'body-last';
+interface Options {
+    /**
+     * # icons store directories
+     * all svg files in these  will be converted to svg sprite.
+     *
+     */
+    iconDirs: string[];
+    /**
+     * icon name format
+     * default: icon-[dir]-[name]
+     */
+    symbolId?: string;
+    /**
+     * SVGO configuration, used to optimize svg
+     * default：{}
+     */
+    svgoOptions?: SvgoConfig;
+    /**
+     * icon format
+     * default: 'body-last'
+     */
+    inject?: InjectMode;
+    /**
+     * custom dom id
+     * default: '__svg__icons__dom__'
+     */
+    customDomId?: string;
+}
+type SymbolEntry = {
+    symbolId: string;
+    symbol: string;
+};
+interface CacheEntry {
+    mtimeMs?: number;
+    entry: SymbolEntry;
+}
+
+declare function validate(opt: Options): void;
+
+declare function createSvgIconsPlugin(userOptions: Options): Plugin;
+declare function generateSymbolId(relativePath: string, options: Required<Options>): string;
+declare function parseDirName(name: string): {
+    dirName: string;
+    baseName: string;
+};
+declare const __TEST__: {
+    generateSymbolId: typeof generateSymbolId;
+    parseDirName: typeof parseDirName;
+    validate: typeof validate;
+};
+
+export { type CacheEntry, type InjectMode, type Options, type SvgoConfig, type SymbolEntry, __TEST__, createSvgIconsPlugin };

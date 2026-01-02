@@ -1,0 +1,28 @@
+<svg width="480" height="300" viewBox="0 0 480 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="radiusGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="50%" stop-color="#d9e8ff" />
+      <stop offset="100%" stop-color="#a6c8ff" />
+    </radialGradient>
+  </defs>
+  <rect width="480" height="300" fill="#f4f7fb" />
+  <circle cx="240" cy="150" r="120" fill="url(#radiusGradient)" stroke="#6aa8ff" stroke-dasharray="6 6" />
+  <circle cx="240" cy="150" r="75" fill="none" stroke="#6aa8ff" stroke-dasharray="4 6" />
+  <circle cx="240" cy="150" r="40" fill="rgba(103,194,58,0.2)" stroke="#67c23a" />
+  <path
+    d="M240 120 C250 120 258 128 258 138 C258 154 240 178 240 178 C240 178 222 154 222 138 C222 128 230 120 240 120 Z"
+    fill="#ff6b6b"
+  />
+  <circle cx="240" cy="138" r="8" fill="#fff" />
+  <text x="240" y="206" text-anchor="middle" font-family="Arial" font-size="16" fill="#409eff">
+    门店中心（配送起点）
+  </text>
+  <text x="240" y="230" text-anchor="middle" font-family="Arial" font-size="14" fill="#606266">
+    以门店为圆心，圆环区域代表可配送范围
+  </text>
+  <text x="240" y="254" text-anchor="middle" font-family="Arial" font-size="12" fill="#909399">
+    可根据业务需要替换为真实示意图
+  </text>
+</svg>
+
