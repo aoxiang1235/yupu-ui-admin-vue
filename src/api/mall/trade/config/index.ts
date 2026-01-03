@@ -10,7 +10,7 @@ export interface ConfigVO {
   deliveryPickUpEnabled?: boolean
   deliverySameCityEnabled?: boolean // 启用同城配送（功能开发中）
   // 同城配送收费配置
-  sameCityChargeMode?: number // 计费方式：1-按距离，2-固定费用，3-自定义费用
+  sameCityChargeMode?: number // 计费方式：1-按距离，2-固定费用
   sameCityStartDistance?: number // 起步距离（公里）
   sameCityStartPrice?: number // 起步价（元）
   sameCityExtraDistance?: number // 续距（公里）
@@ -26,7 +26,7 @@ export interface ConfigVO {
   sameCityDeliveryRangeDescription?: string // 配送范围限制说明
   deliveryStoreEnabled?: boolean // 启用门店自配送（功能开发中）
   // 门店自配送收费配置
-  storeChargeMode?: number // 计费方式：1-按距离，2-固定费用，3-自定义费用
+  storeChargeMode?: number // 计费方式：1-按距离，2-固定费用
   storeStartDistance?: number // 起步距离（公里）
   storeStartPrice?: number // 起步价（元）
   storeExtraDistance?: number // 续距（公里）

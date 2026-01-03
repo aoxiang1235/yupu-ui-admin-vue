@@ -755,7 +755,6 @@
                 <el-radio-group v-model="formData.sameCityChargeMode">
                   <el-radio :value="1">按距离计费</el-radio>
                   <el-radio :value="2">固定费用</el-radio>
-                  <el-radio :value="3">自定义费用</el-radio>
                 </el-radio-group>
                 <el-text class="ml-10px" size="small" type="info"> 选择同城配送的计费方式 </el-text>
               </el-form-item>
@@ -1098,7 +1097,6 @@
                 <el-radio-group v-model="formData.storeChargeMode">
                   <el-radio :value="1">按距离计费</el-radio>
                   <el-radio :value="2">固定费用</el-radio>
-                  <el-radio :value="3">自定义费用</el-radio>
                 </el-radio-group>
                 <el-text class="ml-10px" size="small" type="info">
                   选择门店自配送的计费方式
@@ -1656,7 +1654,7 @@ const formData = ref({
   deliveryPickUpEnabled: false,
   deliverySameCityEnabled: false, // 启用同城配送（功能开发中）
   // 同城配送收费配置
-  sameCityChargeMode: 1, // 计费方式：1-按距离，2-固定费用，3-自定义费用
+  sameCityChargeMode: 1, // 计费方式：1-按距离，2-固定费用
   sameCityStartDistance: 3, // 起步距离（公里）
   sameCityStartPrice: 10, // 起步价（元）
   sameCityExtraDistance: 1, // 续距（公里）
@@ -1672,7 +1670,7 @@ const formData = ref({
   sameCityDeliveryRangeDescription: '', // 配送范围限制说明
   deliveryStoreEnabled: false, // 启用门店自配送（功能开发中）
   // 门店自配送收费配置
-  storeChargeMode: 1, // 计费方式：1-按距离，2-固定费用，3-自定义费用
+  storeChargeMode: 1, // 计费方式：1-按距离，2-固定费用
   storeStartDistance: 3, // 起步距离（公里）
   storeStartPrice: 10, // 起步价（元）
   storeExtraDistance: 1, // 续距（公里）
