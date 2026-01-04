@@ -89,24 +89,27 @@
       <el-row>
         <el-col :span="12">
           <el-form-item label="经度" prop="longitude">
-            <el-input v-model="formData.longitude" placeholder="请输入门店经度" />
+            <el-input v-model="formData.longitude" placeholder="通过接口自动生成，可通过地图详细调整" readonly />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="纬度" prop="latitude">
-            <el-input v-model="formData.latitude" placeholder="请输入门店纬度" />
+            <el-input v-model="formData.latitude" placeholder="通过接口自动生成，可通过地图详细调整" readonly />
           </el-form-item>
         </el-col>
       </el-row>
-      <el-form-item label="获取经纬度">
-        <el-button type="primary" @click="mapDialogVisible = true">获取</el-button>
+      <el-form-item label="地图调整">
+        <el-button type="primary" @click="mapDialogVisible = true">通过地图详细调整</el-button>
+        <span style="font-size: 12px; color: #909399; margin-left: 10px">
+          经纬度通过接口自动生成，可通过地图详细调整，不建议手动填写
+        </span>
       </el-form-item>
     </el-form>
     <template #footer>
       <el-button @click="submitForm" type="primary" :disabled="formLoading">确 定</el-button>
       <el-button @click="dialogVisible = false">取 消</el-button>
     </template>
-    <el-dialog v-model="mapDialogVisible" title="获取经纬度" append-to-body>
+    <el-dialog v-model="mapDialogVisible" title="通过地图详细调整经纬度" append-to-body>
       <IFrame class="h-609px" :src="tencentLbsUrl" />
     </el-dialog>
   </Dialog>
@@ -151,8 +154,6 @@ const formRules = reactive({
   detailAddress: [{ required: true, message: '门店详细地址不能为空', trigger: 'blur' }],
   openingTime: [{ required: true, message: '营业开始时间不能为空', trigger: 'blur' }],
   closingTime: [{ required: true, message: '营业结束时间不能为空', trigger: 'blur' }],
-  latitude: [{ required: true, message: '纬度不能为空', trigger: 'blur' }],
-  longitude: [{ required: true, message: '经度不能为空', trigger: 'blur' }],
   status: [{ required: true, message: '开启状态不能为空', trigger: 'blur' }]
 })
 const formRef = ref() // 表单 Ref
