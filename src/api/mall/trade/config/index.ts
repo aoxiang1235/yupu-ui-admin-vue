@@ -57,6 +57,11 @@ export const getTradeConfig = async () => {
   return await request.get({ url: `/trade/config/get` })
 }
 
+// 获取腾讯地图选点组件 URL
+export const getLocpickerUrl = async () => {
+  return await request.get({ url: `/trade/config/get-locpicker-url` })
+}
+
 // 保存交易中心配置
 export const saveTradeConfig = async (data: ConfigVO) => {
   return await request.put({ url: `/trade/config/save`, data })

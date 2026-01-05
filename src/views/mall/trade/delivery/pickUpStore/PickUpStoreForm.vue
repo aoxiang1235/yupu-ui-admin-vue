@@ -236,22 +236,28 @@ const selectAddress = function (loc: any): void {
 
 /** 初始化腾讯地图 */
 const initTencentLbsMap = async () => {
-  window.selectAddress = selectAddress
-  window.addEventListener(
-    'message',
-    function (event) {
-      // 接收位置信息，用户选择确认位置点后选点组件会触发该事件，回传用户的位置信息
-      let loc = event.data
-      if (loc && loc.module === 'locationPicker') {
-        // 防止其他应用也会向该页面 post 信息，需判断 module 是否为 'locationPicker'
-        window.parent.selectAddress(loc)
-      }
-    },
-    false
-  )
-  const data = await ConfigApi.getTradeConfig()
-  const key = data.tencentLbsKey
-  tencentLbsUrl.value = `https://apis.map.qq.com/tools/locpicker?type=1&key=${key}&referer=myapp`
+  // 清理之前的监听器
+  if ((window as any).mapMessageListener) {
+    window.removeEventListener('message', (window as any).mapMessageListener)
+  }
+  
+  // 定义选点回调
+  ;(window as any).selectAddress = selectAddress
+  
+  // 添加消息监听
+  ;(window as any).mapMessageListener = function (event: MessageEvent) {
+    let loc = event.data
+    if (loc && loc.module === 'locationPicker') {
+      // 防止其他应用也会向该页面 post 信息，需判断 module 是否为 'locationPicker'
+      selectAddress(loc)
+    }
+  }
+  
+  window.addEventListener('message', (window as any).mapMessageListener, false)
+  
+  // 通过后端接口获取 locpicker URL（Key 不会直接暴露在前端代码中）
+  const { data } = await ConfigApi.getLocpickerUrl()
+  tencentLbsUrl.value = data
 }
 
 /** 初始化 **/
