@@ -89,29 +89,20 @@
       <el-row>
         <el-col :span="12">
           <el-form-item label="经度" prop="longitude">
-            <el-input v-model="formData.longitude" placeholder="通过接口自动生成，可通过地图详细调整" readonly />
+            <el-input v-model="formData.longitude" placeholder="通过接口自动生成" readonly />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="纬度" prop="latitude">
-            <el-input v-model="formData.latitude" placeholder="通过接口自动生成，可通过地图详细调整" readonly />
+            <el-input v-model="formData.latitude" placeholder="通过接口自动生成" readonly />
           </el-form-item>
         </el-col>
       </el-row>
-      <el-form-item label="地图调整">
-        <el-button type="primary" @click="mapDialogVisible = true">通过地图详细调整</el-button>
-        <span style="font-size: 12px; color: #909399; margin-left: 10px">
-          经纬度通过接口自动生成，可通过地图详细调整，不建议手动填写
-        </span>
-      </el-form-item>
     </el-form>
     <template #footer>
       <el-button @click="submitForm" type="primary" :disabled="formLoading">确 定</el-button>
       <el-button @click="dialogVisible = false">取 消</el-button>
     </template>
-    <el-dialog v-model="mapDialogVisible" title="通过地图详细调整经纬度" append-to-body>
-      <IFrame class="h-609px" :src="tencentLbsUrl" />
-    </el-dialog>
   </Dialog>
 </template>
 <script setup lang="ts">
@@ -120,12 +111,10 @@ import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { CommonStatusEnum } from '@/utils/constants'
 import { defaultProps } from '@/utils/tree'
 import { getAreaTree } from '@/api/system/area'
-import * as ConfigApi from '@/api/mall/trade/config'
 const { t } = useI18n() // 国际化
 const message = useMessage() // 消息弹窗
 
 const dialogVisible = ref(false) // 弹窗的是否展示
-const mapDialogVisible = ref(false) // 地图弹窗的是否展示
 const dialogTitle = ref('') // 弹窗的标题
 const formLoading = ref(false) // 表单的加载中：1）修改时的数据加载；2）提交的按钮禁用
 const formType = ref('') // 表单的类型：create - 新增；update - 修改
@@ -158,7 +147,6 @@ const formRules = reactive({
 })
 const formRef = ref() // 表单 Ref
 const areaList = ref() // 区域树
-const tencentLbsUrl = ref('') // 腾讯位置服务 url
 
 /** 打开弹窗 */
 const open = async (type: string, id?: number) => {
@@ -223,47 +211,8 @@ const resetForm = () => {
   formRef.value?.resetFields()
 }
 
-/** 选择经纬度 */
-const selectAddress = function (loc: any): void {
-  if (loc.latlng && loc.latlng.lat) {
-    formData.value.latitude = loc.latlng.lat
-  }
-  if (loc.latlng && loc.latlng.lng) {
-    formData.value.longitude = loc.latlng.lng
-  }
-  mapDialogVisible.value = false
-}
-
-/** 初始化腾讯地图 */
-const initTencentLbsMap = async () => {
-  // 清理之前的监听器
-  if ((window as any).mapMessageListener) {
-    window.removeEventListener('message', (window as any).mapMessageListener)
-  }
-  
-  // 定义选点回调
-  ;(window as any).selectAddress = selectAddress
-  
-  // 添加消息监听
-  ;(window as any).mapMessageListener = function (event: MessageEvent) {
-      let loc = event.data
-      if (loc && loc.module === 'locationPicker') {
-        // 防止其他应用也会向该页面 post 信息，需判断 module 是否为 'locationPicker'
-      selectAddress(loc)
-      }
-  }
-  
-  window.addEventListener('message', (window as any).mapMessageListener, false)
-  
-  // 通过后端接口获取 locpicker URL（Key 不会直接暴露在前端代码中）
-  const { data } = await ConfigApi.getLocpickerUrl()
-  tencentLbsUrl.value = data
-}
-
 /** 初始化 **/
 onMounted(async () => {
   areaList.value = await getAreaTree()
-  // 加载地图
-  await initTencentLbsMap()
 })
 </script>
