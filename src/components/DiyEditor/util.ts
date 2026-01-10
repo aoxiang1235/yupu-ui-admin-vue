@@ -119,7 +119,8 @@ export const PAGE_LIBS = [
       'PromotionSeckill',
       'PromotionPoint',
       'CouponCard',
-      'PromotionArticle'
+      'PromotionArticle',
+      'StoreCard'
     ]
   }
 ] as DiyComponentLibrary[]

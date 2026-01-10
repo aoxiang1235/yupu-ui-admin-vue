@@ -246,11 +246,11 @@ const initTencentLbsMap = async () => {
   
   // 添加消息监听
   ;(window as any).mapMessageListener = function (event: MessageEvent) {
-    let loc = event.data
-    if (loc && loc.module === 'locationPicker') {
-      // 防止其他应用也会向该页面 post 信息，需判断 module 是否为 'locationPicker'
+      let loc = event.data
+      if (loc && loc.module === 'locationPicker') {
+        // 防止其他应用也会向该页面 post 信息，需判断 module 是否为 'locationPicker'
       selectAddress(loc)
-    }
+      }
   }
   
   window.addEventListener('message', (window as any).mapMessageListener, false)
