@@ -43,10 +43,21 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
+        id: pnpm-cache
       
       # 6. 安装依赖
       - name: 📦 安装项目依赖
         run: pnpm install --no-frozen-lockfile
+      
+      # 6.5. 清除 Vite 构建缓存（确保新文件被正确扫描）
+      - name: 🗑️ 清除 Vite 构建缓存
+        run: |
+          echo "清除 Vite 缓存..."
+          rm -rf node_modules/.vite 2>/dev/null || true
+          rm -rf .vite 2>/dev/null || true
+          rm -rf dist-prod 2>/dev/null || true
+          rm -rf dist 2>/dev/null || true
+          echo "✅ 缓存已清除"
       
       # 7. 构建生产版本（生成静态文件）
       - name: 🏗️ 构建生产版本
@@ -62,6 +73,16 @@ jobs:
           echo "✅ 静态文件构建成功"
           echo "文件列表："
           ls -lh dist-prod/
+          echo ""
+          echo "检查 assets 目录："
+          if [ -d "dist-prod/assets" ]; then
+            echo "✅ assets 目录存在"
+            echo "assets 文件数量：$(ls -1 dist-prod/assets | wc -l)"
+            echo "assets 文件列表（前10个）："
+            ls -lh dist-prod/assets/ | head -n 10
+          else
+            echo "⚠️ 警告：assets 目录不存在"
+          fi
       
       # 9. 打包静态文件
       - name: 📦 打包静态文件
