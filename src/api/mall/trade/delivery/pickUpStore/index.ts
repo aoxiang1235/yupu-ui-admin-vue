@@ -6,6 +6,7 @@ export interface DeliveryPickUpStoreVO {
   introduction: string
   phone: string
   areaId: number
+  areaName?: string // 区域名称（可选，由后端转换）
   detailAddress: string
   logo: string
   openingTime: string
