@@ -46,15 +46,25 @@ const registerComponentViewModule = (
 
 // 注册
 Object.keys(configModules).forEach((modulePath: string) => {
-  const component = configModules[modulePath].component
-  const componentId = component?.id
-  if (componentId) {
-    // 注册组件
-    componentConfigs[componentId] = component
-    // 注册预览界面
-    registerComponentViewModule(componentId, modulePath, 'index')
-    // 注册属性配置表单
-    registerComponentViewModule(`${componentId}Property`, modulePath, 'property')
+  try {
+    const component = configModules[modulePath].component
+    const componentId = component?.id
+    if (componentId) {
+      // 注册组件
+      componentConfigs[componentId] = component
+      // 注册预览界面
+      registerComponentViewModule(componentId, modulePath, 'index')
+      // 注册属性配置表单
+      registerComponentViewModule(`${componentId}Property`, modulePath, 'property')
+      // 调试日志（开发环境）
+      if (import.meta.env.DEV) {
+        console.log(`[组件注册] ${componentId}: ${component.name}`, component)
+      }
+    } else {
+      console.warn(`[组件注册失败] ${modulePath}: component 或 component.id 不存在`)
+    }
+  } catch (error) {
+    console.error(`[组件注册错误] ${modulePath}:`, error)
   }
 })
 
