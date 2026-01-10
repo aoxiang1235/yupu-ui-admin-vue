@@ -45,10 +45,9 @@ const registerComponentViewModule = (
 }
 
 // 注册
-// 调试：打印所有扫描到的配置文件
-if (import.meta.env.DEV) {
-  console.log('[组件注册] 扫描到的配置文件:', Object.keys(configModules))
-}
+// 调试：打印所有扫描到的配置文件（始终输出，便于排查）
+console.log('[组件注册] 扫描到的配置文件:', Object.keys(configModules))
+console.log('[组件注册] 配置文件总数:', Object.keys(configModules).length)
 Object.keys(configModules).forEach((modulePath: string) => {
   try {
     const module = configModules[modulePath]
@@ -81,10 +80,14 @@ Object.keys(configModules).forEach((modulePath: string) => {
   }
 })
 
-// 调试：打印所有已注册的组件
-if (import.meta.env.DEV) {
-  console.log('[组件注册] 已注册的组件列表:', Object.keys(componentConfigs))
-  console.log('[组件注册] StoreCard 是否存在:', 'StoreCard' in componentConfigs)
+// 调试：打印所有已注册的组件（始终输出，便于排查）
+console.log('[组件注册] 已注册的组件列表:', Object.keys(componentConfigs))
+console.log('[组件注册] 已注册组件总数:', Object.keys(componentConfigs).length)
+console.log('[组件注册] StoreCard 是否存在:', 'StoreCard' in componentConfigs)
+if ('StoreCard' in componentConfigs) {
+  console.log('[组件注册] StoreCard 组件详情:', componentConfigs['StoreCard'])
+} else {
+  console.warn('[组件注册] StoreCard 组件未找到！请检查配置文件是否正确导出 component')
 }
 
 export { components, componentConfigs }
