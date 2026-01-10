@@ -45,9 +45,22 @@ const registerComponentViewModule = (
 }
 
 // 注册
+// 调试：打印所有扫描到的配置文件
+if (import.meta.env.DEV) {
+  console.log('[组件注册] 扫描到的配置文件:', Object.keys(configModules))
+}
 Object.keys(configModules).forEach((modulePath: string) => {
   try {
-    const component = configModules[modulePath].component
+    const module = configModules[modulePath]
+    // 调试：打印模块内容
+    if (import.meta.env.DEV) {
+      console.log(`[组件注册] 处理模块: ${modulePath}`, module)
+    }
+    const component = module?.component
+    if (!component) {
+      console.warn(`[组件注册失败] ${modulePath}: 模块中没有 component 导出`)
+      return
+    }
     const componentId = component?.id
     if (componentId) {
       // 注册组件
@@ -58,14 +71,20 @@ Object.keys(configModules).forEach((modulePath: string) => {
       registerComponentViewModule(`${componentId}Property`, modulePath, 'property')
       // 调试日志（开发环境）
       if (import.meta.env.DEV) {
-        console.log(`[组件注册] ${componentId}: ${component.name}`, component)
+        console.log(`[组件注册成功] ${componentId}: ${component.name}`, component)
       }
     } else {
-      console.warn(`[组件注册失败] ${modulePath}: component 或 component.id 不存在`)
+      console.warn(`[组件注册失败] ${modulePath}: component.id 不存在`, component)
     }
   } catch (error) {
     console.error(`[组件注册错误] ${modulePath}:`, error)
   }
 })
+
+// 调试：打印所有已注册的组件
+if (import.meta.env.DEV) {
+  console.log('[组件注册] 已注册的组件列表:', Object.keys(componentConfigs))
+  console.log('[组件注册] StoreCard 是否存在:', 'StoreCard' in componentConfigs)
+}
 
 export { components, componentConfigs }
