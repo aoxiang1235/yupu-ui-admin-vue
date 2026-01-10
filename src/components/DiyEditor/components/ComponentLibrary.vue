@@ -60,6 +60,9 @@ watch(
     // 清除旧数据
     extendGroups.length = 0
     groups.length = 0
+    // 调试：打印 componentConfigs 中的组件
+    console.log('[ComponentLibrary] componentConfigs 中的组件:', Object.keys(componentConfigs))
+    console.log('[ComponentLibrary] StoreCard 是否在 componentConfigs 中:', 'StoreCard' in componentConfigs)
     // 重新生成数据
     props.list.forEach((group) => {
       // 是否展开分组
@@ -68,8 +71,26 @@ watch(
       }
       // 查找组件
       const components = group.components
-        .map((name) => componentConfigs[name] as DiyComponent<any>)
+        .map((name) => {
+          const component = componentConfigs[name] as DiyComponent<any>
+          if (!component && name === 'StoreCard') {
+            console.warn(`[ComponentLibrary] 组件 "${name}" 未在 componentConfigs 中找到`, {
+              availableComponents: Object.keys(componentConfigs),
+              requestedName: name
+            })
+          }
+          return component
+        })
         .filter((component) => component)
+      
+      if (group.name === '营销组件') {
+        console.log(`[ComponentLibrary] 营销组件组:`, {
+          requestedComponents: group.components,
+          foundComponents: components.map(c => c.id),
+          missingComponents: group.components.filter(name => !componentConfigs[name])
+        })
+      }
+      
       if (components.length > 0) {
         groups.push({
           name: group.name,

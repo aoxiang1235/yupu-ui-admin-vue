@@ -48,16 +48,25 @@ const registerComponentViewModule = (
 // 调试：打印所有扫描到的配置文件（始终输出，便于排查）
 console.log('[组件注册] 扫描到的配置文件:', Object.keys(configModules))
 console.log('[组件注册] 配置文件总数:', Object.keys(configModules).length)
+console.log('[组件注册] 检查 StoreCard 配置路径:', './StoreCard/config.ts' in configModules || Object.keys(configModules).find(key => key.includes('StoreCard')))
+
 Object.keys(configModules).forEach((modulePath: string) => {
   try {
     const module = configModules[modulePath]
-    // 调试：打印模块内容
-    if (import.meta.env.DEV) {
-      console.log(`[组件注册] 处理模块: ${modulePath}`, module)
-    }
+    // 调试：打印模块内容（始终输出，便于排查）
+    console.log(`[组件注册] 处理模块: ${modulePath}`, {
+      hasModule: !!module,
+      hasComponent: !!(module?.component),
+      componentId: module?.component?.id,
+      componentName: module?.component?.name
+    })
+    
     const component = module?.component
     if (!component) {
-      console.warn(`[组件注册失败] ${modulePath}: 模块中没有 component 导出`)
+      console.warn(`[组件注册失败] ${modulePath}: 模块中没有 component 导出`, {
+        moduleKeys: module ? Object.keys(module) : [],
+        moduleType: typeof module
+      })
       return
     }
     const componentId = component?.id
@@ -68,12 +77,16 @@ Object.keys(configModules).forEach((modulePath: string) => {
       registerComponentViewModule(componentId, modulePath, 'index')
       // 注册属性配置表单
       registerComponentViewModule(`${componentId}Property`, modulePath, 'property')
-      // 调试日志（开发环境）
-      if (import.meta.env.DEV) {
-        console.log(`[组件注册成功] ${componentId}: ${component.name}`, component)
-      }
+      // 调试日志（始终输出）
+      console.log(`[组件注册成功] ${componentId}: ${component.name}`, {
+        icon: component.icon,
+        hasProperty: !!component.property
+      })
     } else {
-      console.warn(`[组件注册失败] ${modulePath}: component.id 不存在`, component)
+      console.warn(`[组件注册失败] ${modulePath}: component.id 不存在`, {
+        component: component,
+        componentKeys: component ? Object.keys(component) : []
+      })
     }
   } catch (error) {
     console.error(`[组件注册错误] ${modulePath}:`, error)
