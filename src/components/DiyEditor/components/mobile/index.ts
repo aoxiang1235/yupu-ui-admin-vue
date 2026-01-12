@@ -69,14 +69,14 @@ Object.keys(configModules).forEach((modulePath: string) => {
       })
       return
     }
-    const componentId = component?.id
-    if (componentId) {
-      // 注册组件
-      componentConfigs[componentId] = component
-      // 注册预览界面
-      registerComponentViewModule(componentId, modulePath, 'index')
-      // 注册属性配置表单
-      registerComponentViewModule(`${componentId}Property`, modulePath, 'property')
+  const componentId = component?.id
+  if (componentId) {
+    // 注册组件
+    componentConfigs[componentId] = component
+    // 注册预览界面
+    registerComponentViewModule(componentId, modulePath, 'index')
+    // 注册属性配置表单
+    registerComponentViewModule(`${componentId}Property`, modulePath, 'property')
       // 调试日志（始终输出）
       console.log(`[组件注册成功] ${componentId}: ${component.name}`, {
         icon: component.icon,
