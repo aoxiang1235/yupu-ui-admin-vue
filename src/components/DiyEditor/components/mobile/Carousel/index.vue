@@ -18,7 +18,7 @@
       <el-carousel-item v-for="(item, index) in property.items" :key="index">
         <el-image 
           class="h-full w-full" 
-          :src="getImageUrl(item.imgUrl)"
+          :src="getImageSrc(item.imgUrl)"
         />
       </el-carousel-item>
     </el-carousel>
@@ -43,58 +43,67 @@ const handleIndexChange = (index: number) => {
   currentIndex.value = index + 1
 }
 
-// 存储签名后的图片URL（使用Map以imgUrl为key，避免重复请求）
-const signedUrlCache = new Map<string, string>()
+// 使用响应式对象存储签名后的图片URL（key: 原始URL, value: 签名URL）
+const signedUrlMap = reactive<Record<string, string>>({})
 
-// 获取图片URL（同步方法，返回缓存或原始URL）
-const getImageUrl = (imgUrl: string | undefined): string => {
+// 正在加载中的URL集合（避免重复请求）
+const loadingUrls = new Set<string>()
+
+// 获取图片URL（computed方式，确保响应式更新）
+const getImageSrc = (imgUrl: string | undefined): string => {
   if (!imgUrl) {
     return ''
   }
   
   // 如果URL已经是完整的http/https地址（可能是外部URL或已签名的URL），直接返回
-  if (imgUrl.indexOf('http') === 0) {
+  if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
     return imgUrl
   }
   
-  // 检查缓存
-  if (signedUrlCache.has(imgUrl)) {
-    return signedUrlCache.get(imgUrl)!
+  // 如果已经有签名URL，直接返回
+  if (signedUrlMap[imgUrl]) {
+    return signedUrlMap[imgUrl]
   }
   
-  // 如果缓存中没有，异步获取签名URL（但先返回原始URL，获取到后再更新）
-  // 这样可以避免阻塞渲染
-  loadSignedUrl(imgUrl)
+  // 如果正在加载中，先返回原始URL
+  if (!loadingUrls.has(imgUrl)) {
+    loadSignedUrl(imgUrl)
+  }
   
-  // 先返回原始URL，等签名URL获取到后会自动更新
+  // 先返回原始URL，等签名URL获取到后会自动更新（因为signedUrlMap是响应式的）
   return imgUrl
 }
 
 // 异步加载签名URL
 const loadSignedUrl = async (imgUrl: string) => {
-  // 如果已经在加载中，跳过
-  if (signedUrlCache.has(imgUrl)) {
+  // 如果已经在加载中或已有缓存，跳过
+  if (loadingUrls.has(imgUrl) || signedUrlMap[imgUrl]) {
     return
   }
   
+  loadingUrls.add(imgUrl)
+  
   try {
+    console.log('[Carousel] 开始获取签名URL:', imgUrl)
     const signedUrl = await FileApi.getFileAccessUrl(imgUrl)
-    if (signedUrl) {
-      signedUrlCache.set(imgUrl, signedUrl)
-      // 触发响应式更新
-      // 注意：这里需要强制更新，因为Vue可能不会检测到Map的变化
-      // 我们可以使用一个ref来触发更新
-      updateTrigger.value++
+    console.log('[Carousel] 获取签名URL成功:', signedUrl)
+    
+    if (signedUrl && typeof signedUrl === 'string') {
+      // 使用响应式对象存储，Vue会自动检测到变化并重新渲染
+      signedUrlMap[imgUrl] = signedUrl
+    } else {
+      // 如果返回的不是字符串，使用原始URL
+      console.warn('[Carousel] 签名URL格式不正确，使用原始URL:', signedUrl)
+      signedUrlMap[imgUrl] = imgUrl
     }
   } catch (error) {
     console.error('[Carousel] 获取签名URL失败:', imgUrl, error)
-    // 即使失败，也缓存原始URL，避免重复请求
-    signedUrlCache.set(imgUrl, imgUrl)
+    // 即使失败，也使用原始URL，避免重复请求
+    signedUrlMap[imgUrl] = imgUrl
+  } finally {
+    loadingUrls.delete(imgUrl)
   }
 }
-
-// 用于触发响应式更新的触发器
-const updateTrigger = ref(0)
 
 // 监听items变化，预加载所有图片的签名URL
 watch(
@@ -106,7 +115,7 @@ watch(
     
     // 并行获取所有图片的签名URL
     items.forEach((item) => {
-      if (item.type === 'img' && item.imgUrl && item.imgUrl.indexOf('http') !== 0) {
+      if (item.type === 'img' && item.imgUrl && !item.imgUrl.startsWith('http')) {
         loadSignedUrl(item.imgUrl)
       }
     })
