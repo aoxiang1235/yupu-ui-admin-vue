@@ -46,43 +46,70 @@ const handleIndexChange = (index: number) => {
 // 用于显示在轮播图中的图片URL列表（响应式数组，确保Vue能检测到变化）
 const displayImgUrls = ref<string[]>([])
 
-// 正在加载中的URL集合（避免重复请求）
-const loadingUrls = new Set<string>()
+// 正在加载中的URL集合（key: imgUrl, value: Set<index>，避免重复请求但允许不同索引）
+const loadingUrls = new Map<string, Set<number>>()
 
 // 异步加载签名URL并更新对应索引的URL
 const loadSignedUrl = async (imgUrl: string, index: number) => {
   // 如果URL已经是完整的http/https地址，直接使用
   if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+    // 确保数组长度足够
+    if (displayImgUrls.value.length <= index) {
+      displayImgUrls.value.length = index + 1
+    }
     displayImgUrls.value[index] = imgUrl
     return
   }
   
-  // 如果已经在加载中，跳过
-  if (loadingUrls.has(imgUrl)) {
+  // 检查是否正在加载（允许不同索引的相同URL同时加载）
+  const loadingIndices = loadingUrls.get(imgUrl)
+  if (loadingIndices && loadingIndices.has(index)) {
     return
   }
   
-  loadingUrls.add(imgUrl)
+  // 标记为正在加载
+  if (!loadingIndices) {
+    loadingUrls.set(imgUrl, new Set([index]))
+  } else {
+    loadingIndices.add(index)
+  }
   
   try {
     console.log('[Carousel] 开始获取签名URL:', imgUrl, 'index:', index)
     const signedUrl = await FileApi.getFileAccessUrl(imgUrl)
-    console.log('[Carousel] 获取签名URL成功:', signedUrl)
+    console.log('[Carousel] 获取签名URL成功:', signedUrl, 'index:', index)
+    
+    // 确保数组长度足够
+    if (displayImgUrls.value.length <= index) {
+      displayImgUrls.value.length = index + 1
+    }
     
     if (signedUrl && typeof signedUrl === 'string') {
       // 更新响应式数组，Vue会自动检测到变化并重新渲染
       displayImgUrls.value[index] = signedUrl
+      console.log('[Carousel] 已更新显示URL，index:', index, 'URL:', signedUrl)
     } else {
       // 如果返回的不是字符串，使用原始URL
       console.warn('[Carousel] 签名URL格式不正确，使用原始URL:', signedUrl)
       displayImgUrls.value[index] = imgUrl
     }
   } catch (error) {
-    console.error('[Carousel] 获取签名URL失败:', imgUrl, error)
+    console.error('[Carousel] 获取签名URL失败:', imgUrl, 'index:', index, error)
+    // 确保数组长度足够
+    if (displayImgUrls.value.length <= index) {
+      displayImgUrls.value.length = index + 1
+    }
     // 即使失败，也使用原始URL
     displayImgUrls.value[index] = imgUrl
   } finally {
-    loadingUrls.delete(imgUrl)
+    // 清除加载标记
+    const indices = loadingUrls.get(imgUrl)
+    if (indices) {
+      indices.delete(index)
+      if (indices.size === 0) {
+        loadingUrls.delete(imgUrl)
+      }
+    }
   }
 }
 
@@ -90,13 +117,16 @@ const loadSignedUrl = async (imgUrl: string, index: number) => {
 watch(
   () => props.property.items,
   async (items) => {
+    console.log('[Carousel] items变化，长度:', items?.length)
     if (!items || items.length === 0) {
       displayImgUrls.value = []
       return
     }
     
-    // 初始化数组，先使用原始URL
-    displayImgUrls.value = items.map((item) => {
+    // 初始化数组，先使用原始URL，确保数组长度与items一致
+    displayImgUrls.value = new Array(items.length).fill('').map((_, index) => {
+      const item = items[index]
+      if (!item) return ''
       const imgUrl = item.type === 'img' ? item.imgUrl : item.videoUrl
       // 如果已经是完整URL，直接使用
       if (imgUrl && (imgUrl.startsWith('http://') || imgUrl.startsWith('https://'))) {
@@ -105,6 +135,8 @@ watch(
       // 否则先返回原始URL，后续异步更新
       return imgUrl || ''
     })
+    
+    console.log('[Carousel] 初始化displayImgUrls，长度:', displayImgUrls.value.length)
     
     // 并行获取所有图片的签名URL
     const promises = items.map(async (item, index) => {
@@ -115,6 +147,7 @@ watch(
     })
     
     await Promise.all(promises)
+    console.log('[Carousel] 所有签名URL加载完成，displayImgUrls:', displayImgUrls.value)
   },
   { immediate: true, deep: true }
 )
