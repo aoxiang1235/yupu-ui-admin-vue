@@ -18,7 +18,7 @@
       <el-carousel-item v-for="(item, index) in property.items" :key="index">
         <el-image 
           class="h-full w-full" 
-          :src="getImageSrc(item.imgUrl)"
+          :src="displayImgUrls[index] || item.imgUrl"
         />
       </el-carousel-item>
     </el-carousel>
@@ -43,82 +43,78 @@ const handleIndexChange = (index: number) => {
   currentIndex.value = index + 1
 }
 
-// 使用响应式对象存储签名后的图片URL（key: 原始URL, value: 签名URL）
-const signedUrlMap = reactive<Record<string, string>>({})
+// 用于显示在轮播图中的图片URL列表（响应式数组，确保Vue能检测到变化）
+const displayImgUrls = ref<string[]>([])
 
 // 正在加载中的URL集合（避免重复请求）
 const loadingUrls = new Set<string>()
 
-// 获取图片URL（computed方式，确保响应式更新）
-const getImageSrc = (imgUrl: string | undefined): string => {
-  if (!imgUrl) {
-    return ''
-  }
-  
-  // 如果URL已经是完整的http/https地址（可能是外部URL或已签名的URL），直接返回
+// 异步加载签名URL并更新对应索引的URL
+const loadSignedUrl = async (imgUrl: string, index: number) => {
+  // 如果URL已经是完整的http/https地址，直接使用
   if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
-    return imgUrl
+    displayImgUrls.value[index] = imgUrl
+    return
   }
   
-  // 如果已经有签名URL，直接返回
-  if (signedUrlMap[imgUrl]) {
-    return signedUrlMap[imgUrl]
-  }
-  
-  // 如果正在加载中，先返回原始URL
-  if (!loadingUrls.has(imgUrl)) {
-    loadSignedUrl(imgUrl)
-  }
-  
-  // 先返回原始URL，等签名URL获取到后会自动更新（因为signedUrlMap是响应式的）
-  return imgUrl
-}
-
-// 异步加载签名URL
-const loadSignedUrl = async (imgUrl: string) => {
-  // 如果已经在加载中或已有缓存，跳过
-  if (loadingUrls.has(imgUrl) || signedUrlMap[imgUrl]) {
+  // 如果已经在加载中，跳过
+  if (loadingUrls.has(imgUrl)) {
     return
   }
   
   loadingUrls.add(imgUrl)
   
   try {
-    console.log('[Carousel] 开始获取签名URL:', imgUrl)
+    console.log('[Carousel] 开始获取签名URL:', imgUrl, 'index:', index)
     const signedUrl = await FileApi.getFileAccessUrl(imgUrl)
     console.log('[Carousel] 获取签名URL成功:', signedUrl)
     
     if (signedUrl && typeof signedUrl === 'string') {
-      // 使用响应式对象存储，Vue会自动检测到变化并重新渲染
-      signedUrlMap[imgUrl] = signedUrl
+      // 更新响应式数组，Vue会自动检测到变化并重新渲染
+      displayImgUrls.value[index] = signedUrl
     } else {
       // 如果返回的不是字符串，使用原始URL
       console.warn('[Carousel] 签名URL格式不正确，使用原始URL:', signedUrl)
-      signedUrlMap[imgUrl] = imgUrl
+      displayImgUrls.value[index] = imgUrl
     }
   } catch (error) {
     console.error('[Carousel] 获取签名URL失败:', imgUrl, error)
-    // 即使失败，也使用原始URL，避免重复请求
-    signedUrlMap[imgUrl] = imgUrl
+    // 即使失败，也使用原始URL
+    displayImgUrls.value[index] = imgUrl
   } finally {
     loadingUrls.delete(imgUrl)
   }
 }
 
-// 监听items变化，预加载所有图片的签名URL
+// 监听items变化，为所有图片获取签名URL
 watch(
   () => props.property.items,
-  (items) => {
+  async (items) => {
     if (!items || items.length === 0) {
+      displayImgUrls.value = []
       return
     }
     
+    // 初始化数组，先使用原始URL
+    displayImgUrls.value = items.map((item) => {
+      const imgUrl = item.type === 'img' ? item.imgUrl : item.videoUrl
+      // 如果已经是完整URL，直接使用
+      if (imgUrl && (imgUrl.startsWith('http://') || imgUrl.startsWith('https://'))) {
+        return imgUrl
+      }
+      // 否则先返回原始URL，后续异步更新
+      return imgUrl || ''
+    })
+    
     // 并行获取所有图片的签名URL
-    items.forEach((item) => {
-      if (item.type === 'img' && item.imgUrl && !item.imgUrl.startsWith('http')) {
-        loadSignedUrl(item.imgUrl)
+    const promises = items.map(async (item, index) => {
+      const imgUrl = item.type === 'img' ? item.imgUrl : item.videoUrl
+      if (imgUrl && !imgUrl.startsWith('http')) {
+        await loadSignedUrl(imgUrl, index)
       }
     })
+    
+    await Promise.all(promises)
   },
   { immediate: true, deep: true }
 )
